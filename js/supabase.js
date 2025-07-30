@@ -3,7 +3,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // 1. Configuración de Supabase
 const SUPABASE_URL = 'https://dqusvawklxmxycyruwrj.supabase.co';
 // ¡IMPORTANTE! Asegúrate de que esta sea tu "anon public key"
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXN2YXdrbHhteHljeXJ1d3JqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkzMjg1NCwiZXhwIjoyMDY3NTA4ODU0fQ.-1XoJpEEzJoxgvAkU1sYv66M_OqqDqiVUUJRX2d4qKQ';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXN2YXdrbHhteHljeXJ1d3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5MzI4NTQsImV4cCI6MjA2NzUwODg1NH0.4U_1Tx6w_Vvj-FcggAEh-LFkGmxqjcAY5CLNTcC4SZ0';
 
 // Se crea la instancia de Supabase. NO se exporta aquí individualmente.
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
