@@ -38,11 +38,13 @@ export async function registerUser(email, password, userData) {
             password,
             options: {
                 data: {
-                    full_name: userData.nombre,
-                    phone: userData.telefono
-                }
+                full_name: userData.nombre,
+                phone: userData.telefono
+                },
+                emailRedirectTo: 'https://theunicbarbershop.netlify.app/login.html'
             }
-        });
+            });
+
 
         if (authError) throw authError;
 
