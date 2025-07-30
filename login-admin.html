@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin - THE UNIC BARBER</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <style>
+        :root {
+            --primary: #000;
+            --secondary: #fff;
+            --accent: #d4af37;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        .login-container {
+            background: var(--secondary);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .logo-admin {
+            margin-bottom: 20px;
+        }
+        
+        .logo-admin img {
+            height: 60px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+        }
+        
+        .btn-login {
+            background: var(--primary);
+            color: var(--secondary);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            width: 100%;
+            transition: background 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            background: #333;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            display: none; /* Se mostrará con JavaScript si hay un error */
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-admin">
+            <img src="assets/logo.png" alt="The Unic Barber">
+        </div>
+        <h1>Panel Administrativo</h1>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Correo Electrónico</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" required>
+            </div>
+            
+            <button type="submit" class="btn-login">Iniciar Sesión</button>
+            <div id="error-message" class="error-message"></div>
+        </form>
+    </div>
+
+    <script src="js/supabase.js" type="module"></script>
+    <script src="js/login-admin.js" type="module"></script>
+</body>
+</html>

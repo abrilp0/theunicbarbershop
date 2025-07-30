@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Hora - THE UNIC BARBER</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <style>
+        /* Estilos temporales para diagnóstico */
+        body {
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo-container">
+                <a href="index.html" class="logo">
+                    <img src="assets/logoUnic.png" alt="The Unic Barber Logo" class="main-logo">
+                </a>
+            </div>
+            <div class="menu-toggle" id="mobile-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-list">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="index.html#servicios">Servicios</a></li>
+                <li><a href="index.html#barberos">Nuestros Barberos</a></li>
+                <li><a href="index.html#galeria">Galería</a></li>
+                <li><a href="index.html#sedes">Sedes</a></li>
+                <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
+            </ul>
+        </div>
+    </nav>
+
+<section class="booking-form">
+    <div class="container">
+        <div class="form-container">
+            <div class="booking-header">
+                <h2 class="section-title">Agenda tu <span>Hora</span></h2>
+                <p class="booking-subtitle">Completa el formulario para reservar tu cita</p>
+            </div>
+            
+            <form id="bookingForm">
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-user"></i> Información Personal
+                    </h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Nombre Completo</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Teléfono</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-scissors"></i> Servicio
+                    </h3>
+                    <div class="form-group full-width">
+                        <label for="service">Selecciona un servicio</label>
+                        <select id="service" name="service" required>
+                            <option value="">Selecciona un servicio</option>
+                            <option value="Corte Clásico">Corte general - $10.000</option>
+                            <option value="Barba Premium">Corte + barba - $15.000</option>
+                            <option value="Tratamiento Capilar">Barba - $7.000</option>
+                            <option value="Corte + Barba">Permanente - $65.000</option>
+                            <option value="Corte Cumpleaños Gratis">Corte de Cumpleaños GRATIS</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-clock"></i> Fecha y Hora
+                    </h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fecha">Fecha</label>
+                            <input type="date" id="fecha" name="fecha" required min="">
+                        </div>
+                        <div class="form-group">
+                            <label for="hora">Hora</label>
+                            <select id="hora" name="hora" required>
+                                <option value="">Primero selecciona barbero y fecha</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-map-marker-alt"></i> Ubicación
+                    </h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Sede</label>
+                            <select id="location" name="location" required>
+                                <option value="">Selecciona una sede</option>
+                                <option value="brasil">Sede Calle Brasil</option>
+                                <option value="manuel rodriguez">Sede Manuel Rodríguez</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="barbero">Barbero</label>
+                            <select id="barbero" name="barbero" required>
+                                <option value="">Selecciona un barbero</option>
+                                </select>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-edit"></i> Notas Adicionales
+                    </h3>
+                    <div class="form-group full-width">
+                        <label for="notes">¿Algo que debamos saber para tu visita?</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="Ej: Preferencia de corte, alergias, etc."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-terms">
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="terms" name="terms" required>
+                        <label for="terms">Acepto que debo llegar 10 minutos antes de mi cita</label>
+                    </div>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="policy" name="policy" required>
+                        <label for="policy">Entiendo que si no asisto a mi cita seré suspendido por 2 semanas</label>
+                    </div>
+                </div>
+                
+                <div class="form-status">
+                    <div id="loader" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <p>Procesando tu reserva...</p>
+                    </div>
+                    <p id="mensaje"></p>
+                </div>
+                
+                <div class="form-submit">
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-calendar-check"></i> Confirmar Reserva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+
+        <!-- Footer -->
+    <footer>
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="assets/logo.png" alt="The Unic Barber Logo">
+                <span>THE UNIC BARBER</span>
+            </div>
+            <div class="footer-links">
+                <h4>Enlaces</h4>
+                <ul>
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#servicios">Servicios</a></li>
+                    <li><a href="#barberos">Nuestros Barberos</a></li>
+                    <li><a href="#galeria">Galería</a></li>
+                    <li><a href="#sedes">Sedes</a></li>
+                    <li><a href="agendar.html">Agendar</a></li>
+                </ul>
+            </div>
+            <div class="footer-social">
+                <h4>Síguenos</h4>
+                <div class="social-icons">
+                    <a href="https://www.instagram.com/the_unic_/" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="https://www.facebook.com/theunicbarbershop/?locale=es_LA" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-facebook"></i> Facebook
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 THE UNIC BARBER. Todos los derechos reservados.</p>
+            <p class="footer-note">*Clientes que no asistan a su cita serán suspendidos por 2 semanas</p>
+        </div>
+    </div>
+</footer>
+
+    <script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/agendar.js"></script>
+<script type="module" src="js/session.js"></script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - THE UNIC BARBER</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            color: #333;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #000;
+            color: white;
+            padding: 15px 0;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .navbar .logo img {
+            width: 40px;
+            margin-right: 10px;
+        }
+
+        .navbar .nav-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+
+        .navbar .nav-list li {
+            margin-left: 20px;
+        }
+
+        .navbar .nav-list li a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .navbar .nav-list li a:hover {
+            color: #d4af37;
+        }
+
+        /* Login Hero */
+        .login-hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                        url('assets/fondoRegistro.jpg') no-repeat center center/cover;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 0;
+        }
+
+        .login-container {
+            max-width: 500px;
+            width: 90%;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #000;
+            font-size: 1.75rem;
+            position: relative;
+        }
+
+        .login-container h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: #d4af37;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: #d4af37;
+            outline: none;
+        }
+
+        .btn-login {
+            width: 100%;
+            background: #000;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-login:hover {
+            background: #d4af37;
+            color: #000;
+        }
+
+        #mensaje {
+            margin-top: 15px;
+            text-align: center;
+            min-height: 20px;
+            font-size: 0.9rem;
+        }
+
+        .logo-login {
+            height: 80px;
+            margin-bottom: 20px;
+        }
+
+        .login-links {
+            margin-top: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .login-links a {
+            color: #d4af37;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .login-links a:hover {
+            color: #000;
+            text-decoration: underline;
+        }
+
+        .login-message {
+            background-color: #fff8e1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #d4af37;
+            text-align: center;
+        }
+
+        .login-message p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        /* Modal de Recuperación */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+            animation: modalFadeIn 0.4s;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-modal h2 {
+            color: #000;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .auth-modal p {
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .auth-modal-btn {
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+            margin-top: 15px;
+        }
+
+        .auth-modal-btn-primary {
+            background: #000;
+            color: white;
+            border: 2px solid #000;
+        }
+
+        .auth-modal-btn-primary:hover {
+            background: #333;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #000;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar .nav-list {
+                display: none;
+            }
+            
+            .login-container {
+                padding: 25px 20px;
+            }
+            
+            .logo-login {
+                height: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <img src="assets/logo.png" alt="The Unic Barber Logo">
+                <span>THE UNIC BARBER</span>
+            </a>
+            <div class="nav-list">
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="registro.html">Registrarse</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Modal de Recuperación de Contraseña -->
+    <div id="passwordResetModal" class="auth-modal">
+        <div class="auth-modal-content">
+            <button class="close-modal" onclick="closeResetModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-key"></i> Recuperar Contraseña</h2>
+            <p>Ingresa tu correo electrónico para recibir un enlace de recuperación:</p>
+            
+            <div class="form-group">
+                <input type="email" id="resetEmail" placeholder="tucorreo@ejemplo.com" class="form-control">
+            </div>
+            
+            <button id="sendResetLink" class="auth-modal-btn auth-modal-btn-primary">
+                <i class="fas fa-paper-plane"></i> Enviar Enlace
+            </button>
+            
+            <p id="resetMessage" style="margin-top: 15px;"></p>
+        </div>
+    </div>
+
+    <!-- Sección de Login -->
+    <section class="login-hero">
+        <div class="login-container">
+            <img src="assets/logo.png" alt="Logo" class="logo-login">
+            <h2>Iniciar Sesión</h2>
+            
+            <div class="login-message">
+                <p>Para poder agendar una cita, debes iniciar sesión.</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="password">Contraseña</label>
+                        <a href="#" id="forgotPassword" style="font-size: 0.9rem;">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                </button>
+            </form>
+            
+            <p id="mensaje"></p>
+            
+            <div class="login-links">
+                <a href="registro.html">¿No tienes cuenta? Regístrate aquí</a>
+            </div>
+        </div>
+    </section>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js'
+        
+        const supabase = createClient(
+            'https://dqusvawklxmxycyruwrj.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXN2YXdrbHhteHljeXJ1d3JqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkzMjg1NCwiZXhwIjoyMDY3NTA4ODU0fQ.-1XoJpEEzJoxgvAkU1sYv66M_OqqDqiVUUJRX2d4qKQ'
+        );
+        
+        // Elementos del DOM
+        const loginForm = document.getElementById('loginForm');
+        const mensaje = document.getElementById('mensaje');
+        const forgotPassword = document.getElementById('forgotPassword');
+        const passwordResetModal = document.getElementById('passwordResetModal');
+        const resetEmail = document.getElementById('resetEmail');
+        const sendResetLink = document.getElementById('sendResetLink');
+        const resetMessage = document.getElementById('resetMessage');
+        
+        // Función para cerrar el modal
+        function closeResetModal() {
+            passwordResetModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Mostrar modal de recuperación
+        forgotPassword.addEventListener('click', function(e) {
+            e.preventDefault();
+            passwordResetModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            resetMessage.textContent = '';
+            resetEmail.value = '';
+        });
+        
+        // Enviar enlace de recuperación
+        sendResetLink.addEventListener('click', async function() {
+            const email = resetEmail.value.trim();
+            
+            if (!email) {
+                resetMessage.textContent = "Por favor ingresa tu correo electrónico";
+                resetMessage.style.color = "red";
+                return;
+            }
+            
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/actualizar-contrasena.html'
+                });
+                
+                if (error) throw error;
+                
+                resetMessage.textContent = "¡Enlace enviado! Revisa tu correo electrónico.";
+                resetMessage.style.color = "green";
+                
+                // Cerrar automáticamente después de 3 segundos
+                setTimeout(() => {
+                    closeResetModal();
+                }, 3000);
+            } catch (error) {
+                resetMessage.textContent = "Error: " + error.message;
+                resetMessage.style.color = "red";
+                console.error("Error al enviar enlace:", error);
+            }
+        });
+        
+        // Login normal
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            mensaje.textContent = '';
+            
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) throw error;
+                
+                // Redirigir según la página de origen
+                const redirectUrl = localStorage.getItem('redirectAfterAuth') || 'agendar.html';
+                localStorage.removeItem('redirectAfterAuth');
+                window.location.href = redirectUrl;
+            } catch (error) {
+                mensaje.textContent = error.message || 'Credenciales inválidas';
+                console.error("Error al iniciar sesión:", error);
+            }
+        });
+        
+        // Cerrar modal al hacer clic fuera
+        passwordResetModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeResetModal();
+            }
+        });
+        
+        // Permitir enviar con Enter en el campo de email
+        resetEmail.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendResetLink.click();
+            }
+        });
+    </script>
+</body>
+</html>

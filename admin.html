@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - THE UNIC BARBER</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style-admin.css">
+    <link rel="icon" href="assets/logo.png" type="image/png">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <img src="assets/logo.png" alt="The Unic Barber Logo">
+                <span>THE UNIC BARBER</span>
+            </a>
+            
+            <div class="admin-info">
+                <span class="sede" id="admin-sede"></span>
+                <span id="admin-email"></span>
+            </div>
+            
+            <ul>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                <li><a href="#" id="logout-btn">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1><i class="fas fa-crown"></i> Panel de Administración</h1>
+            <div class="sede-info" id="sede-name"></div>
+            <p>Gestiona clientes, citas y promociones</p>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Buscar clientes, citas o promociones...">
+        </div>
+
+        <div class="admin-grid">
+            <div class="admin-card">
+                <h2><i class="fas fa-users"></i> Clientes</h2>
+                <div class="item-list" id="clientesList">
+                </div>
+            </div>
+            
+            <div class="admin-card">
+                <h2><i class="fas fa-calendar-alt"></i> Citas del Día</h2>
+                <div class="item-list" id="citasList">
+                </div>
+            </div>
+            
+            <div class="admin-card">
+                <h2><i class="fas fa-tags"></i> Promociones Activas</h2>
+                <div class="item-list" id="promocionesList">
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h2><i class="fas fa-birthday-cake"></i> Cumpleaños Hoy</h2>
+            <div class="item-list" id="cumpleanosList">
+            </div>
+        </div>
+
+        <div class="admin-card" style="margin-top: 40px;">
+            <h2><i class="fas fa-file-excel"></i> Exportar Citas a Excel</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="exportFechaInicio">Fecha Inicio</label>
+                    <input type="date" id="exportFechaInicio">
+                </div>
+                <div class="form-group">
+                    <label for="exportFechaFin">Fecha Fin</label>
+                    <input type="date" id="exportFechaFin">
+                </div>
+            </div>
+            <button class="btn btn-success" id="exportCitasBtn">
+                <i class="fas fa-download"></i> Exportar Citas
+            </button>
+            <p style="font-size: 12px; color: #888; margin-top: 10px;">Exportará todas las citas del rango de fechas seleccionado (nombre cliente, barbero, fecha, hora).</p>
+        </div>
+
+        <div class="promo-form">
+            <h2><i class="fas fa-plus-circle"></i> Crear Nueva Promoción</h2>
+            
+            <div class="form-group">
+                <label for="promo-titulo">Título</label>
+                <input type="text" id="promo-titulo" placeholder="Ej: Corte + Barba 30% OFF" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="promo-descripcion">Descripción</label>
+                <textarea id="promo-descripcion" placeholder="Detalles de la promoción..." required></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="promo-inicio">Fecha Inicio</label>
+                    <input type="date" id="promo-inicio" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="promo-fin">Fecha Fin</label>
+                    <input type="date" id="promo-fin" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="promo-imagen-url">Imagen (URL)</label>
+                <input type="text" id="promo-imagen-url" placeholder="https://ejemplo.com/imagen.jpg">
+            </div>
+            
+            <div class="form-group">
+                <label for="promo-sede">Sede</label>
+                <select id="promo-sede" disabled>
+                    <option value="brasil">Brasil</option>
+                    <option value="manuel_rodriguez">Manuel Rodríguez</option>
+                </select>
+            </div>
+                
+            <button class="btn btn-primary" id="crearPromoBtn">
+                <i class="fas fa-plus"></i> Crear Promoción
+            </button>
+        </div>
+    </div>
+
+    <audio id="notificationSound" src="assets/notificacionSound.mp3" preload="auto"></audio>
+    <audio id="birthdaySound" src="assets/happy-birthday.mp3" preload="auto"></audio>
+
+    <div id="cumpleanosBookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeCumpleanosBookingModal()">&times;</span>
+            <h2>Agendar Corte de Cumpleaños</h2>
+            <p>Cliente: <span id="cumpleanosClienteNombre"></span></p>
+            <p>Sede del Cliente: <span id="cumpleanosClienteSede"></span></p>
+
+            <div class="form-group">
+                <label for="cumpleanosBarberoSelect">Seleccionar Barbero</label>
+                <select id="cumpleanosBarberoSelect"></select>
+            </div>
+
+            <div class="form-group">
+                <label for="cumpleanosFechaInput">Fecha</label>
+                <input type="date" id="cumpleanosFechaInput">
+            </div>
+
+            <div class="form-group">
+                <label for="cumpleanosHoraSelect">Hora</label>
+                <select id="cumpleanosHoraSelect"></select>
+            </div>
+
+            <button class="btn btn-primary" onclick="confirmCumpleanosBooking()">Confirmar Agendamiento</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script type="module" src="./js/admin.js"></script>
+</body>
+</html>
