@@ -81,17 +81,32 @@ export async function loginUser(email, password) {
 
         if (error) throw error;
 
-        // **NUEVA LÓGICA: CREAR CLIENTE EN DB DESPUÉS DE INICIO DE SESIÓN CONFIRMADO**
+        // --- INICIO DE NUEVOS REGISTROS ---
+        console.log("LOGIN DEBUG: User data after signInWithPassword:", data.user);
+        console.log("LOGIN DEBUG: Email confirmado?", data.user?.email_confirmed_at);
+
         if (data.user && data.user.email_confirmed_at) { // Solo si el email está confirmado
+            console.log("LOGIN DEBUG: User exists and email is confirmed. Checking for client entry...");
             const { data: clienteExistente, error: clienteCheckError } = await supabase
                 .from('clientes')
                 .select('id, bloqueado') // 'bloqueado' para consistencia con tu esquema
                 .eq('id', data.user.id)
                 .single();
 
-            if (clienteCheckError && clienteCheckError.code === 'PGRST116') { // No se encontró el cliente
-                // Intenta insertar el cliente. Accede a los metadatos.
+            console.log("LOGIN DEBUG: Result of client check:", { clienteExistente, clienteCheckError });
+
+            // PGRST116 indica que no se encontró una fila única (es decir, no existe el cliente)
+            if (clienteCheckError && clienteCheckError.code === 'PGRST116') {
+                console.log("LOGIN DEBUG: Client not found (PGRST116). Attempting to insert...");
                 const userMetadata = data.user.user_metadata;
+                console.log("LOGIN DEBUG: User metadata:", userMetadata);
+
+                // Verificar si los metadatos necesarios están presentes
+                if (!userMetadata || !userMetadata.nombre || !userMetadata.telefono || !userMetadata.fecha_nacimiento) {
+                    console.error("LOGIN DEBUG: Faltan datos en user_metadata para crear el cliente.");
+                    throw new Error("Datos de perfil incompletos. Vuelve a registrarte o contacta soporte.");
+                }
+
                 const { error: insertError } = await supabase
                     .from('clientes')
                     .insert([{
@@ -106,22 +121,30 @@ export async function loginUser(email, password) {
                     }]);
 
                 if (insertError) {
-                    console.error("Error al insertar cliente en login:", insertError);
-                    // Puedes decidir si abortar el login o continuar con un mensaje de advertencia
-                    // Por ahora, lanzamos el error
-                    throw new Error("Error al crear perfil de cliente. Contacta soporte.");
+                    console.error("LOGIN DEBUG: Error al insertar cliente en login:", insertError);
+                    throw new Error(`Error al crear perfil de cliente: ${insertError.message}. Contacta soporte.`);
+                } else {
+                    console.log("LOGIN DEBUG: Cliente insertado con éxito.");
                 }
             } else if (clienteExistente && clienteExistente.bloqueado) { // Cliente existe y está bloqueado
+                console.log("LOGIN DEBUG: Cliente existente y bloqueado.");
                 await supabase.auth.signOut();
                 throw new Error('Usuario suspendido. Contacta al administrador.');
             } else if (clienteCheckError) { // Otros errores al buscar cliente
+                console.error("LOGIN DEBUG: Otro error al buscar cliente:", clienteCheckError);
                 throw clienteCheckError;
+            } else {
+                console.log("LOGIN DEBUG: Cliente existente y no bloqueado. No se necesita insertar.");
             }
         } else if (data.user && !data.user.email_confirmed_at) {
              // Si el usuario inicia sesión pero no ha confirmado el email
+             console.log("LOGIN DEBUG: User exists but email NOT confirmed. Signing out.");
              await supabase.auth.signOut(); // Cierra la sesión inmediatamente
              throw new Error('Por favor, confirma tu email para iniciar sesión.');
+        } else {
+             console.log("LOGIN DEBUG: No user data after sign-in.");
         }
+        // --- FIN DE NUEVOS REGISTROS ---
 
         // Verificar si es admin (esta lógica se mantiene igual)
         const { data: admin, error: adminError } = await supabase
@@ -135,6 +158,7 @@ export async function loginUser(email, password) {
         }
 
         if (admin) {
+            console.log("LOGIN DEBUG: User is an admin.");
             return {
                 success: true,
                 user: data.user,
@@ -143,7 +167,7 @@ export async function loginUser(email, password) {
                 message: 'Bienvenido administrador'
             };
         }
-
+        console.log("LOGIN DEBUG: User is a regular client.");
         // Si no es admin y pasó la verificación de cliente (o se creó)
         return {
             success: true,
@@ -205,11 +229,11 @@ export async function checkAuth() {
         if (clienteError) {
              // Si el cliente no se encuentra (PGRST116) y el email no está confirmado, podría ser un usuario sin perfil de cliente.
              // Ocurrirá si el usuario aún no ha iniciado sesión después de confirmar su email.
-             console.warn("Cliente no encontrado en checkAuth, es posible que no haya iniciado sesión post-confirmación:", clienteError);
+             console.warn("Error en checkAuth al buscar cliente, es posible que no haya iniciado sesión post-confirmación:", clienteError);
              return {
                 isAuthenticated: true, // El usuario está autenticado en auth.users
                 user: user, // Solo datos de auth.users, sin datos de clientes
-                message: 'Sesión verificada, perfil de cliente pendiente de creación/carga.'
+                message: 'Sesión verificada, pero perfil de cliente no encontrado. Por favor, inicia sesión para crearlo.'
              };
         }
         
