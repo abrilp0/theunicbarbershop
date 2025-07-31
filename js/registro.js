@@ -1,65 +1,65 @@
 // js/registro.js
+
 import { registerUser } from './auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const registrationForm = document.getElementById('registrationForm');
-    const messageDiv = document.getElementById('message'); // Asegúrate de tener un div con ID 'message' en tu registro.html
+    // Asegúrate de que este ID coincida con el ID en tu registro.html
+    const messageDiv = document.getElementById('message'); // <--- ¡VERIFICA ESTA LÍNEA!
+    const submitBtn = registrationForm.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
 
-    if (registrationForm) {
+    // Configurar fecha máxima (18 años atrás)
+    const fechaNacimientoInput = document.getElementById('fecha_nacimiento');
+    const hoy = new Date();
+    const fechaMaxima = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
+    fechaNacimientoInput.max = fechaMaxima.toISOString().split('T')[0];
+
+    if (registrationForm) { // Envuelto en if para seguridad, aunque ya sabemos que lo encuentra
         registrationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const nombre = document.getElementById('nombre').value.trim();
-            const telefono = document.getElementById('telefono').value.trim();
-            const fechaNacimiento = document.getElementById('fecha_nacimiento').value;
-
-            // Limpiar mensajes anteriores
-            if (messageDiv) {
-                messageDiv.textContent = '';
-                messageDiv.className = 'message';
+            
+            if (messageDiv) { // Verifica si el elemento del mensaje existe
+                messageDiv.textContent = ''; // Limpiar mensajes anteriores
+                messageDiv.className = 'message'; // Restaurar clase base
             }
 
-            // Validación básica del lado del cliente
-            if (!email || !password || !nombre || !telefono || !fechaNacimiento) {
-                if (messageDiv) {
-                    messageDiv.textContent = 'Por favor, completa todos los campos.';
-                    messageDiv.className = 'message error';
-                }
-                console.warn("REGISTRO.JS DEBUG: Campos obligatorios incompletos.");
-                return;
-            }
-
-            // Aquí puedes añadir más validaciones (ej. formato de email, longitud de contraseña, etc.)
-
-            const userData = {
-                nombre,
-                telefono,
-                fecha_nacimiento: fechaNacimiento,
-                // Puedes añadir 'sede' aquí si es necesario al registrar
-                // sede: 'valor_sede' 
-            };
-
-            console.log("REGISTRO.JS DEBUG: Llamando a registerUser con datos:", { email, userData });
+            // Mostrar loader
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+            submitBtn.disabled = true;
 
             try {
+                const userData = {
+                    nombre: registrationForm.nombre.value.trim(),
+                    telefono: registrationForm.telefono.value.trim().replace(/\s+/g, ''),
+                    fecha_nacimiento: registrationForm.fecha_nacimiento.value
+                };
+                const email = registrationForm.email.value.trim();
+                const password = registrationForm.password.value;
+
+                // Validaciones adicionales aquí si es necesario...
+                if (!userData.nombre || !email || !password || !userData.telefono || !userData.fecha_nacimiento) {
+                    throw new Error('Por favor, completa todos los campos.');
+                }
+
+                console.log("REGISTRO.JS DEBUG: Llamando a registerUser con datos:", { email, userData });
+
                 const { success, user, message, error, code } = await registerUser(email, password, userData);
 
                 console.log("REGISTRO.JS DEBUG: registerUser retornó:", { success, user, message, error, code });
 
                 if (success) {
-                    if (messageDiv) {
+                    if (messageDiv) { // Vuelve a verificar que el elemento exista
                         messageDiv.textContent = message || 'Registro exitoso. Revisa tu email para confirmar.';
-                        messageDiv.className = 'message success';
+                        messageDiv.className = 'message success'; // Asume que tienes una clase 'success' para estilos verdes/positivos
                     }
-                    // Opcional: limpiar el formulario después del registro exitoso
-                    registrationForm.reset();
-                    console.log("REGISTRO.JS DEBUG: Registro exitoso.");
+                    registrationForm.reset(); // Limpiar el formulario
+                    console.log("REGISTRO.JS DEBUG: Registro exitoso. Mensaje mostrado.");
+                    // No hay redirección aquí, se espera que el usuario revise el email.
                 } else {
                     if (messageDiv) {
                         messageDiv.textContent = error || 'Error en el registro.';
-                        messageDiv.className = 'message error';
+                        messageDiv.className = 'message error'; // Asume una clase 'error' para estilos rojos
                     }
                     console.error("REGISTRO.JS DEBUG: Falló el registro:", error, "Código:", code);
                 }
@@ -68,10 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     messageDiv.textContent = err.message || 'Error inesperado durante el registro.';
                     messageDiv.className = 'message error';
                 }
-                console.error("REGISTRO.JS DEBUG: Error inesperado al llamar a registerUser:", err);
+                console.error("REGISTRO.JS DEBUG: Error en el bloque try-catch:", err);
+            } finally {
+                // Restaurar botón
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
             }
         });
     } else {
         console.error("REGISTRO.JS DEBUG: Elemento registrationForm no encontrado en el DOM.");
     }
+
+    // Mejorar UX para el teléfono
+    document.getElementById('telefono').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
 });
