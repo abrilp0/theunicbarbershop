@@ -1,5 +1,28 @@
 import { supabase } from './supabase.js';
+// Manejo del menú hamburguesa y sesión de usuario
+document.addEventListener('DOMContentLoaded', function() {
+    // Menú hamburguesa
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navList = document.querySelector('.nav-list');
+    
+    if (menuToggle && navList) {
+        menuToggle.addEventListener('click', function() {
+            navList.classList.toggle('active');
+        });
+    }
 
+    // Cerrar sesión
+    const logoutLink = document.getElementById('logout-link');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const { error } = await supabase.auth.signOut();
+            if (!error) {
+                window.location.href = 'index.html';
+            }
+        });
+    }
+});
 document.addEventListener('DOMContentLoaded', async function () {
     // Elementos del DOM
     const locationSelect = document.getElementById('location');
@@ -19,8 +42,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (authError || !user) {
         window.location.href = 'login.html';
         return;
+    } else {
+        // Mostrar opción de cerrar sesión
+        const logoutLi = document.getElementById('logout-li');
+        if (logoutLi) {
+            logoutLi.style.display = 'block';
+        }
     }
-
     // Precargar información del usuario y verificar estado 'bloqueado'
     let clienteData = null; // Variable para almacenar los datos del cliente logueado
     if (user) {
