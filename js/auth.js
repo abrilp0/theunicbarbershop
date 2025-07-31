@@ -77,11 +77,21 @@ export async function registerUser(email, password, userData) {
 export async function loginUser(email, password) {
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
+  email,
+  password
+});
 
-        if (error) throw error;
+if (error) throw error;
+
+if (!data.user.email_confirmed_at) {
+  await supabase.auth.signOut();
+  return {
+    success: false,
+    error: 'Debes confirmar tu correo antes de iniciar sesión.',
+    code: 'EMAIL_NOT_CONFIRMED'
+  };
+}
+
 
         // Verificar si es admin
         const { data: admin, error: adminError } = await supabase
