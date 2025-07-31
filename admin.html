@@ -9,6 +9,31 @@
     <link rel="icon" href="assets/logo.png" type="image/png">
 </head>
 <body>
+        <script type="module">
+        import { checkAuth, logoutUser } from './js/auth.js';
+        import { setupAdminPage } from './js/admin.js';
+        
+        async function checkAdminAccess() {
+            const { isAuthenticated, isAdmin, error } = await checkAuth();
+            const params = new URLSearchParams(window.location.search);
+            const message = params.get('message');
+
+            if (!isAuthenticated || !isAdmin) {
+                await logoutUser(); // Cierra sesión si no es admin
+                const redirectUrl = `/login.html?error=Acceso%20denegado.%20Solo%20para%20administradores.`;
+                window.location.href = redirectUrl;
+            } else {
+                document.body.style.display = 'block';
+                // Si es admin, inicia el script de la página
+                setupAdminPage();
+            }
+        }
+        
+        // Evita que el contenido se muestre antes de la verificación
+        document.body.style.display = 'none';
+        
+        document.addEventListener('DOMContentLoaded', checkAdminAccess);
+    </script>    
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="logo">

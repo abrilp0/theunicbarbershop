@@ -46,7 +46,7 @@ export async function registerUser(email, password, userData) {
                     fecha_nacimiento: userData.fecha_nacimiento,
                     sede: userData.sede || 'brasil' // Pasa la sede si está en userData
                 },
-                emailRedirectTo: 'https://dapper-empanada-f24c14.netlify.app/login.html' // URL de redirección CORRECTA
+                emailRedirectTo: 'https://theunicbarbershop.cl/login.html' // URL de redirección CORRECTA
             }
         });
 
