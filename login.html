@@ -385,108 +385,21 @@
         </div>
     </section>
 
-    <script type="module">
-        import { createClient } from 'https://esm.sh/@supabase/supabase-js'
-        
-        const supabase = createClient(
-            'https://dqusvawklxmxycyruwrj.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXN2YXdrbHhteHljeXJ1d3JqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkzMjg1NCwiZXhwIjoyMDY3NTA4ODU0fQ.-1XoJpEEzJoxgvAkU1sYv66M_OqqDqiVUUJRX2d4qKQ'
-        );
-        
-        // Elementos del DOM
-        const loginForm = document.getElementById('loginForm');
-        const mensaje = document.getElementById('mensaje');
-        const forgotPassword = document.getElementById('forgotPassword');
-        const passwordResetModal = document.getElementById('passwordResetModal');
-        const resetEmail = document.getElementById('resetEmail');
-        const sendResetLink = document.getElementById('sendResetLink');
-        const resetMessage = document.getElementById('resetMessage');
-        
-        // Función para cerrar el modal
-        function closeResetModal() {
-            passwordResetModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
+    <script type="module" src="./js/supabase.js"></script>
+    <script type="module" src="./js/auth.js"></script>
+    <script type="module" src="./js/login.js"></script>
+    
+    <script>
+        // Este script es solo para lógica simple directamente en el HTML,
+        // como la gestión del parámetro de redirección, que no necesita estar en un módulo.
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect');
+
+        if (redirect) {
+            localStorage.setItem('redirectAfterAuth', redirect);
         }
-        
-        // Mostrar modal de recuperación
-        forgotPassword.addEventListener('click', function(e) {
-            e.preventDefault();
-            passwordResetModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            resetMessage.textContent = '';
-            resetEmail.value = '';
-        });
-        
-        // Enviar enlace de recuperación
-        sendResetLink.addEventListener('click', async function() {
-            const email = resetEmail.value.trim();
-            
-            if (!email) {
-                resetMessage.textContent = "Por favor ingresa tu correo electrónico";
-                resetMessage.style.color = "red";
-                return;
-            }
-            
-            try {
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: window.location.origin + '/actualizar-contrasena.html'
-                });
-                
-                if (error) throw error;
-                
-                resetMessage.textContent = "¡Enlace enviado! Revisa tu correo electrónico.";
-                resetMessage.style.color = "green";
-                
-                // Cerrar automáticamente después de 3 segundos
-                setTimeout(() => {
-                    closeResetModal();
-                }, 3000);
-            } catch (error) {
-                resetMessage.textContent = "Error: " + error.message;
-                resetMessage.style.color = "red";
-                console.error("Error al enviar enlace:", error);
-            }
-        });
-        
-        // Login normal
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            mensaje.textContent = '';
-            
-            const email = loginForm.email.value;
-            const password = loginForm.password.value;
-            
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
-                
-                if (error) throw error;
-                
-                // Redirigir según la página de origen
-                const redirectUrl = localStorage.getItem('redirectAfterAuth') || 'agendar.html';
-                localStorage.removeItem('redirectAfterAuth');
-                window.location.href = redirectUrl;
-            } catch (error) {
-                mensaje.textContent = error.message || 'Credenciales inválidas';
-                console.error("Error al iniciar sesión:", error);
-            }
-        });
-        
-        // Cerrar modal al hacer clic fuera
-        passwordResetModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeResetModal();
-            }
-        });
-        
-        // Permitir enviar con Enter en el campo de email
-        resetEmail.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendResetLink.click();
-            }
-        });
     </script>
+</body>
+</html>
 </body>
 </html>
