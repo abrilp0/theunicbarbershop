@@ -46,7 +46,7 @@ export async function registerUser(email, password, userData) {
                     telefono: userData.telefono, // ESTO ES CORRECTO: SE ENVÍA 'telefono' sin tilde
                     fecha_nacimiento: userData.fecha_nacimiento
                 },
-                emailRedirectTo: 'https://theunicbarbershop.netlify.app/login.html'
+                emailRedirectTo: 'https://dapper-empanada-f24c14.netlify.app/login.html'
             }
         });
 
