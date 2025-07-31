@@ -1,25 +1,28 @@
 import { supabase } from './supabase.js';
 
 /**
- * Registra un nuevo usuario en Supabase Auth y en la tabla clientes
+ * Registra un nuevo usuario en Supabase Auth.
+ * La inserción en la tabla 'clientes' se manejará automáticamente por un trigger de base de datos.
  */
 export async function registerUser(email, password, userData) {
     try {
+        // Validación local (userData.telefono es como lo envías desde el frontend)
         if (!email || !password || !userData?.nombre || !userData?.telefono) {
             throw new Error('Faltan campos obligatorios');
         }
 
-        // Verificar duplicados
+        // Verificar duplicados en la tabla 'clientes' antes de intentar el registro en Auth.
+        // Usamos 'telefono' SIN tilde para coincidir con el esquema de la DB según el error.
         const { data: existingUsers, error: checkError } = await supabase
             .from('clientes')
-            .select('email, telefono')
-            .or(`email.eq.${email},telefono.eq.${userData.telefono}`);
+            .select('email, telefono') // CORRECCIÓN: 'telefono' SIN tilde
+            .or(`email.eq.${email},telefono.eq.${userData.telefono}`); // CORRECCIÓN: 'telefono' SIN tilde
 
         if (checkError) throw checkError;
 
         if (existingUsers?.length > 0) {
             const emailExists = existingUsers.some(u => u.email === email);
-            const phoneExists = existingUsers.some(u => u.telefono === userData.telefono);
+            const phoneExists = existingUsers.some(u => u.telefono === userData.telefono); // CORRECCIÓN: 'telefono' SIN tilde
 
             let errorMsg = 'Error de registro';
             if (emailExists && phoneExists) {
@@ -33,34 +36,24 @@ export async function registerUser(email, password, userData) {
         }
 
         // Crear usuario en Supabase Auth
+        // Los datos adicionales (nombre, telefono, fecha_nacimiento) se pasan al user_metadata
         const { data: { user }, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                data: {
-                full_name: userData.nombre,
-                phone: userData.telefono
+                data: { // Estos datos se guardan en new.raw_user_meta_data en el trigger
+                    nombre: userData.nombre,
+                    telefono: userData.telefono, // ESTO ES CORRECTO: SE ENVÍA 'telefono' sin tilde
+                    fecha_nacimiento: userData.fecha_nacimiento
                 },
                 emailRedirectTo: 'https://theunicbarbershop.netlify.app/login.html'
             }
-            });
-
+        });
 
         if (authError) throw authError;
 
-        // Insertar en clientes
-        const { error: dbError } = await supabase
-            .from('clientes')
-            .insert([{
-                id: user.id,
-                nombre: userData.nombre,
-                telefono: userData.telefono,
-                email: email,
-                fecha_nacimiento: userData.fecha_nacimiento,
-                sede: userData.sede || 'brasil' // Puedes cambiar esto si tienes selección
-            }]);
-
-        if (dbError) throw dbError;
+        // La inserción directa en 'clientes' se ha ELIMINADO de aquí.
+        // La base de datos lo hará automáticamente con el trigger.
 
         return {
             success: true,
@@ -110,12 +103,12 @@ export async function loginUser(email, password) {
         // Si no es admin, es cliente. Verificar estado
         const { data: cliente, error: clienteError } = await supabase
             .from('clientes')
-            .select('baneado')
+            .select('bloqueado')
             .eq('id', data.user.id)
             .single();
 
         if (clienteError) throw clienteError;
-        if (cliente.baneado) {
+        if (cliente.bloqueado) {
             await supabase.auth.signOut();
             throw new Error('Usuario suspendido. Contacta al administrador.');
         }
@@ -175,7 +168,7 @@ export async function checkAuth() {
             .single();
 
         if (clienteError) throw clienteError;
-        if (cliente.baneado) {
+        if (cliente.bloqueado) {
             await supabase.auth.signOut();
             throw new Error('Usuario suspendido');
         }
@@ -271,7 +264,7 @@ export async function checkBirthdayPromo(userId) {
         const hoy = new Date();
         const cumple = new Date(cliente.fecha_nacimiento);
         const esCumple = hoy.getMonth() === cumple.getMonth() &&
-                         hoy.getDate() === cumple.getDate();
+                             hoy.getDate() === cumple.getDate();
 
         const tienePromo = esCumple && (cliente.visitas >= 4);
 

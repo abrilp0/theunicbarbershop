@@ -53,19 +53,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Registrar usuario
-            const { success, error } = await registerUser(email, password, userData);
+            const { success: registerSuccess, error: registerError } = await registerUser(email, password, userData); // <--- CAMBIO AQUÍ: RENOMBRAR success/error
 
-            if (success) {
+            if (registerSuccess) { // <--- USAR registerSuccess
                 mensaje.style.color = 'green';
-                mensaje.textContent = '¡Registro exitoso! Por favor verifica tu email.';
+                mensaje.textContent = '¡Registro exitoso! Por favor verifica tu email para iniciar sesión.'; // Mensaje más claro
                 form.reset();
 
                 // Redirigir después de 3 segundos
                 setTimeout(() => {
-                    window.location.href = 'login.html?registered=true';
+                    // La redirección después del registro exitoso siempre debe ir al login,
+                    // ya que el usuario necesita confirmar su email primero.
+                    // El `redirectAfterAuth` es para cuando el email ya está confirmado.
+                    window.location.href = 'login.html?registered=true'; 
                 }, 3000);
             } else {
-                throw new Error(error || 'Error desconocido al registrar');
+                throw new Error(registerError || 'Error desconocido al registrar'); // <--- USAR registerError
             }
         } catch (error) {
             console.error('Error en registro:', error);
@@ -73,15 +76,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Manejo especial de errores conocidos
             if (error.message.includes('duplicate key')) {
                 if (error.message.includes('email')) {
-                    mensaje.textContent = 'Este email ya está registrado';
+                    mensaje.textContent = 'Este email ya está registrado.';
                 } else if (error.message.includes('telefono')) {
-                    mensaje.textContent = 'Este teléfono ya está registrado';
+                    mensaje.textContent = 'Este teléfono ya está registrado.';
                 } else {
-                    mensaje.textContent = 'El usuario ya existe';
+                    mensaje.textContent = 'El usuario ya existe.';
                 }
             } else if (error.message.includes('password')) {
-                mensaje.textContent = 'La contraseña no cumple los requisitos';
-            } else {
+                mensaje.textContent = 'La contraseña no cumple los requisitos.';
+            } else if (error.message.includes('new row violates row-level security policy for table "clientes"')) {
+                mensaje.textContent = 'Hubo un problema al crear tu perfil. Por favor, intenta de nuevo o contacta soporte.';
+            } 
+            else {
                 mensaje.textContent = error.message;
             }
         } finally {
@@ -94,16 +100,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mejorar UX para el teléfono
     document.getElementById('telefono').addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '');
-        // ... código anterior ...
+    });
+});
 
-if (success) {
+// Este bloque de código estaba mal ubicado y causaba el ReferenceError y la redirección no deseada.
+// DEBE SER ELIMINADO COMPLETAMENTE O MOVIDO A UN LUGAR ADECUADO.
+/*
+if (success) { // <--- ESTO CAUSA EL ReferenceError porque 'success' no está definido aquí.
     mensaje.style.color = 'green';
     mensaje.textContent = '¡Registro exitoso! Por favor verifica tu email.';
     form.reset();
 
     // Redirigir después de 3 segundos
     setTimeout(() => {
-        // --- CAMBIO AQUÍ: LA LÓGICA DE REDIRECCIÓN DEBE SER ESTA ---
         const urlParams = new URLSearchParams(window.location.search);
         const redirect = urlParams.get('redirect');
         
@@ -117,10 +126,7 @@ if (success) {
     // ...
 }
 
-// ... código posterior ...
-
-// --- ELIMINA ESTO: ESTE CÓDIGO CAUSA LA REDIRECCIÓN SIEMPRE ---
-/*
+// Este código también es problemático si se ejecuta al inicio del script.
 const urlParams = new URLSearchParams(window.location.search);
 const redirect = urlParams.get('redirect');
 if (redirect) {
@@ -129,6 +135,3 @@ if (redirect) {
     window.location.href = 'agendar.html';
 }
 */
-// --- FIN DEL CÓDIGO A ELIMINAR ---
-    });
-});
