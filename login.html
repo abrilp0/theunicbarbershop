@@ -311,21 +311,61 @@
     </style>
 </head>
 <body>
+    <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - THE UNIC BARBER</title>
+    <!-- Agrega esto en el head -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/logo.png" type="image/png">
+</head>
+<body>
     <!-- Navbar -->
     <nav class="navbar">
         <div class="container">
-            <a href="index.html" class="logo">
-                <img src="assets/logo.png" alt="The Unic Barber Logo">
-                <span>THE UNIC BARBER</span>
-            </a>
-            <div class="nav-list">
-                <ul>
-                    <li><a href="index.html">Inicio</a></li>
-                    <li><a href="registro.html">Registrarse</a></li>
-                </ul>
+            <div class="logo-container">
+                <a href="index.html" class="logo">
+                    <img src="assets/logo.png" alt="The Unic Barber Logo" class="main-logo">
+                    <span>THE UNIC BARBER</span>
+                </a>
             </div>
+            <div class="menu-toggle" id="mobile-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-list">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="registro.html">Registrarse</a></li>
+                <li id="user-menu-container" style="display: none;">
+                    <a href="#" id="auth-link">
+                        <i class="fas fa-user"></i>
+                        <span id="user-email"></span>
+                    </a>
+                    <div id="user-dropdown">
+                        <a href="#" id="logout-link">Cerrar sesión</a>
+                    </div>
+                </li>
+            </ul>
         </div>
     </nav>
+
+    <!-- Formulario de login -->
+    <div class="container">
+        <!-- Agrega esto justo antes del formulario -->
+        <div id="message" class="message" style="display: none;"></div>
+        
+        <form id="loginForm" class="form-container">
+            <!-- resto del formulario -->
+        </form>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>
 
     <!-- Modal de Recuperación de Contraseña -->
     <div id="passwordResetModal" class="auth-modal">

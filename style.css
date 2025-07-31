@@ -1066,167 +1066,25 @@ footer {
     .promo-dates {
         font-style: italic;
     }
-    /* ==================== MODIFICACIONES PARA MÓVIL ==================== */
+ /* ==================== MENÚ HAMBURGUESA Y USUARIO ==================== */
 
-/* Menú hamburguesa mejorado */
-@media (max-width: 768px) {
-    .menu-toggle {
-        display: flex;
-        position: absolute;
-        right: 20px;
-        top: 30px;
-        z-index: 1001;
-    }
-    
-    .nav-list {
-        position: fixed;
-        top: 80px;
-        left: -100%;
-        width: 100%;
-        height: calc(100vh - 80px);
-        background-color: var(--primary-color);
-        flex-direction: column;
-        align-items: center;
-        padding: 2rem 0;
-        transition: left 0.3s ease;
-        z-index: 999;
-    }
-    
-    .nav-list.active {
-        left: 0;
-    }
-    
-    .nav-list li {
-        margin: 1rem 0;
-        width: 100%;
-        text-align: center;
-    }
-    
-    .nav-list a {
-        display: block;
-        padding: 1rem;
-    }
-    
-    /* Mostrar opción de cerrar sesión siempre en móvil */
-    #logout-li {
-        display: block !important;
-    }
-}
-
-/* Footer funcional en móvil */
-@media (max-width: 768px) {
-    footer .footer-links a {
-        padding: 12px 0;
-        display: block;
-        width: 100%;
-        text-align: center;
-    }
-    
-    footer .footer-links li {
-        margin: 0;
-    }
-}
-
-/* Formulario responsive */
-@media (max-width: 768px) {
-    .form-container {
-        padding: 2rem 1rem;
-        margin: 1rem auto;
-    }
-    
-    .booking-header h2 {
-        font-size: 1.8rem;
-    }
-    
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-    
-    .form-group input, 
-    .form-group select {
-        padding: 12px;
-    }
-}
-
-/* Logo responsive */
-@media (max-width: 480px) {
-    .logo-container {
-        height: 80px;
-    }
-    
-    .main-logo {
-        object-position: center;
-    }
-}
-
-/* Dropdown de usuario */
-#auth-link-container {
-    position: relative;
-}
-
-.dropdown {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    display: none;
-    min-width: 150px;
+/* Estilos base del navbar */
+.navbar {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    padding: 1rem 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
     z-index: 1000;
+    box-shadow: 0 2px 10px rgba(255, 13, 13, 0.1);
 }
-
-.dropdown a {
-    color: #333;
-    padding: 10px 15px;
-    display: block;
-    text-decoration: none;
-}
-
-.dropdown a:hover {
-    background-color: #f5f5f5;
-}
-
-#auth-link-container:hover .dropdown {
-    display: block;
-}
-.message {
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 4px;
-    display: none;
-}
-
-.message.error {
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ef9a9a;
-    display: block;
-}
-
-.message.success {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #a5d6a7;
-    display: block;
-}
-
-#error-message {
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 4px;
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ef9a9a;
-    display: none;
-}
-/* ==================== MENÚ DE USUARIO Y CERRAR SESIÓN ==================== */
 
 /* Contenedor del menú de usuario */
 #user-menu-container {
     position: relative;
     margin-left: auto;
+    display: none; /* Oculto por defecto, se muestra con JS */
 }
 
 /* Estilo del enlace principal (email del usuario) */
@@ -1278,8 +1136,71 @@ footer {
     display: block;
 }
 
-/* Estilos específicos para móviles */
+/* Menú hamburguesa */
+.menu-toggle {
+    display: none;
+    cursor: pointer;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 21px;
+    position: absolute;
+    right: 20px;
+    top: 25px;
+    z-index: 1001;
+}
+
+.menu-toggle span {
+    display: block;
+    height: 3px;
+    width: 100%;
+    background-color: var(--secondary-color);
+    transition: all 0.3s;
+}
+
+/* Estilos para móviles */
 @media (max-width: 768px) {
+    .menu-toggle {
+        display: flex;
+        background: rgba(0,0,0,0.7);
+        padding: 10px;
+        border-radius: 4px;
+    }
+    
+    .menu-toggle span {
+        background-color: var(--accent-color);
+    }
+    
+    .nav-list {
+        position: fixed;
+        top: 80px;
+        left: -100%;
+        width: 100%;
+        height: calc(100vh - 80px);
+        background-color: var(--primary-color);
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 0;
+        transition: left 0.3s ease;
+        z-index: 999;
+    }
+    
+    .nav-list.active {
+        left: 0;
+    }
+    
+    .nav-list li {
+        margin: 1rem 0;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .nav-list a {
+        display: block;
+        padding: 1rem;
+    }
+    
+    /* Menú de usuario en móviles */
     #user-menu-container {
         width: 100%;
         margin: 1rem 0 0;
@@ -1290,6 +1211,7 @@ footer {
     #auth-link {
         justify-content: center;
         padding: 0.75rem;
+        font-size: 1.1rem;
     }
     
     #user-dropdown {
@@ -1302,17 +1224,36 @@ footer {
     }
     
     #user-dropdown a {
-        color: var(--secondary-color);
+        color: var(--accent-color) !important;
+        font-weight: bold;
         text-align: center;
         padding: 0.5rem;
     }
     
     #user-dropdown a:hover {
         background: transparent;
-        color: var(--accent-color);
     }
-    
-    #user-menu-container:hover #user-dropdown {
-        display: block !important;
-    }
+}
+
+/* ==================== MENSAJES DE ERROR ==================== */
+.message {
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 4px;
+    display: none;
+    text-align: center;
+}
+
+.message.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+    display: block;
+}
+
+.message.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+    display: block;
 }
