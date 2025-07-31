@@ -4,44 +4,93 @@ import { supabase } from './supabase.js';
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const errorMessageElement = document.getElementById('error-message');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+
+    // Verificar inmediatamente si el usuario es admin
+    checkAdminSession();
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Evita la recarga de la página por defecto del formulario
+            event.preventDefault();
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
 
-            errorMessageElement.textContent = ''; // Limpiar mensajes de error previos
-            errorMessageElement.style.display = 'none';
+            // Validación básica
+            if (!email || !password) {
+                showError('Por favor ingresa tu email y contraseña');
+                return;
+            }
 
             try {
-                const { error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
 
                 if (error) {
-                    errorMessageElement.textContent = 'Error al iniciar sesión: ' + error.message;
-                    errorMessageElement.style.display = 'block';
-                    console.error('Error de inicio de sesión:', error);
-                } else {
-                    // Redirigir al panel de administración si el login es exitoso
-                    window.location.href = 'admin.html';
+                    showError('Email o contraseña incorrectos');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    return;
                 }
+
+                // Verificar si el usuario es admin
+                const { data: { user } } = await supabase.auth.getUser();
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('is_admin')
+                    .eq('id', user.id)
+                    .single();
+
+                if (userError || !userData?.is_admin) {
+                    await supabase.auth.signOut();
+                    showError('No tienes permisos de administrador');
+                    return;
+                }
+
+                // Redirigir al panel de admin
+                window.location.href = 'admin.html';
+
             } catch (err) {
-                errorMessageElement.textContent = 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.';
-                errorMessageElement.style.display = 'block';
-                console.error('Error inesperado durante el login:', err);
+                showError('Error al iniciar sesión. Intenta nuevamente.');
+                console.error('Error inesperado:', err);
             }
         });
     }
-});
 
-// Opcional: Redirigir si ya hay una sesión activa al cargar login-admin.html
-// Esto evita que un admin logueado vea la página de login
-supabase.auth.getUser().then(({ data: { user } }) => {
-    if (user) {
-        window.location.href = 'admin.html';
+    async function checkAdminSession() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // Verificar si es admin
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('is_admin')
+                    .eq('id', user.id)
+                    .single();
+
+                if (!userError && userData?.is_admin) {
+                    window.location.href = 'admin.html';
+                } else {
+                    await supabase.auth.signOut();
+                }
+            }
+        } catch (e) {
+            console.error("Error al verificar sesión:", e);
+        }
     }
-}).catch(e => console.error("Error al verificar sesión en login:", e));
+
+    function showError(message) {
+        if (errorMessageElement) {
+            errorMessageElement.textContent = message;
+            errorMessageElement.style.display = 'block';
+            
+            // Ocultar mensaje después de 5 segundos
+            setTimeout(() => {
+                errorMessageElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+});
