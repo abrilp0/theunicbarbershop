@@ -18,4 +18,19 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     } else {
         alert(error || 'Ocurrió un error');
     }
+    // login.js
+const { data: session, error } = await supabase.auth.signInWithPassword({
+  email,
+  password,
+});
+
+if (session && session.user && session.user.confirmed_at) {
+  // Ya confirmó, ahora podemos crear el cliente
+  await supabase.from("clientes").insert([{
+    id: session.user.id,
+    correo: session.user.email,
+    nombre: "Nombre que obtengas del formulario"  // O de donde sea
+  }]);
+}
+
 });

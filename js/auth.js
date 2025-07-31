@@ -2,27 +2,26 @@ import { supabase } from './supabase.js';
 
 /**
  * Registra un nuevo usuario en Supabase Auth.
- * La inserción en la tabla 'clientes' se manejará automáticamente por un trigger de base de datos.
+ * La inserción en la tabla 'clientes' se manejará al iniciar sesión DESPUÉS de la confirmación de email.
  */
 export async function registerUser(email, password, userData) {
     try {
-        // Validación local (userData.telefono es como lo envías desde el frontend)
-        if (!email || !password || !userData?.nombre || !userData?.telefono) {
+        if (!email || !password || !userData?.nombre || !userData?.telefono) { // 'telefono' sin tilde para consistencia con frontend
             throw new Error('Faltan campos obligatorios');
         }
 
-        // Verificar duplicados en la tabla 'clientes' antes de intentar el registro en Auth.
-        // Usamos 'telefono' SIN tilde para coincidir con el esquema de la DB según el error.
+        // Antes de intentar registrar en Auth, podemos hacer una verificación de duplicados.
+        // Asumiendo que 'telefono' en la tabla 'clientes' es SIN tilde.
         const { data: existingUsers, error: checkError } = await supabase
             .from('clientes')
-            .select('email, telefono') // CORRECCIÓN: 'telefono' SIN tilde
-            .or(`email.eq.${email},telefono.eq.${userData.telefono}`); // CORRECCIÓN: 'telefono' SIN tilde
+            .select('email, telefono') // ASUMIMOS 'telefono' SIN TILDE en la tabla clientes
+            .or(`email.eq.${email},telefono.eq.${userData.telefono}`);
 
         if (checkError) throw checkError;
 
         if (existingUsers?.length > 0) {
             const emailExists = existingUsers.some(u => u.email === email);
-            const phoneExists = existingUsers.some(u => u.telefono === userData.telefono); // CORRECCIÓN: 'telefono' SIN tilde
+            const phoneExists = existingUsers.some(u => u.telefono === userData.telefono);
 
             let errorMsg = 'Error de registro';
             if (emailExists && phoneExists) {
@@ -35,30 +34,28 @@ export async function registerUser(email, password, userData) {
             throw new Error(errorMsg);
         }
 
-        // Crear usuario en Supabase Auth
-        // Los datos adicionales (nombre, telefono, fecha_nacimiento) se pasan al user_metadata
-        const { data: { user }, error: authError } = await supabase.auth.signUp({
+        // Crear usuario en Supabase Auth.
+        // Los 'userData' adicionales se guardan en 'raw_user_meta_data'.
+        const { data, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                data: { // Estos datos se guardan en new.raw_user_meta_data en el trigger
+                data: {
                     nombre: userData.nombre,
-                    telefono: userData.telefono, // ESTO ES CORRECTO: SE ENVÍA 'telefono' sin tilde
-                    fecha_nacimiento: userData.fecha_nacimiento
+                    telefono: userData.telefono, // 'telefono' sin tilde para el metadata
+                    fecha_nacimiento: userData.fecha_nacimiento,
+                    sede: userData.sede || 'brasil' // Pasa la sede si está en userData
                 },
-                emailRedirectTo: 'https://dapper-empanada-f24c14.netlify.app/login.html'
+                emailRedirectTo: 'https://dapper-empanada-f24c14.netlify.app/login.html' // URL de redirección CORRECTA
             }
         });
 
         if (authError) throw authError;
 
-        // La inserción directa en 'clientes' se ha ELIMINADO de aquí.
-        // La base de datos lo hará automáticamente con el trigger.
-
         return {
             success: true,
-            user,
-            message: 'Registro exitoso. Por favor verifica tu email.'
+            user: data.user,
+            message: 'Registro exitoso. Por favor verifica tu email para iniciar sesión.'
         };
 
     } catch (error) {
@@ -73,32 +70,69 @@ export async function registerUser(email, password, userData) {
 
 /**
  * Inicia sesión con email y contraseña. Detecta si es admin o cliente.
+ * Se encarga de crear el cliente en la tabla 'clientes' si no existe y el email está confirmado.
  */
 export async function loginUser(email, password) {
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
-  email,
-  password
-});
+            email,
+            password
+        });
 
-if (error) throw error;
+        if (error) throw error;
 
-if (!data.user.email_confirmed_at) {
-  await supabase.auth.signOut();
-  return {
-    success: false,
-    error: 'Debes confirmar tu correo antes de iniciar sesión.',
-    code: 'EMAIL_NOT_CONFIRMED'
-  };
-}
+        // **NUEVA LÓGICA: CREAR CLIENTE EN DB DESPUÉS DE INICIO DE SESIÓN CONFIRMADO**
+        if (data.user && data.user.email_confirmed_at) { // Solo si el email está confirmado
+            const { data: clienteExistente, error: clienteCheckError } = await supabase
+                .from('clientes')
+                .select('id, bloqueado') // 'bloqueado' para consistencia con tu esquema
+                .eq('id', data.user.id)
+                .single();
 
+            if (clienteCheckError && clienteCheckError.code === 'PGRST116') { // No se encontró el cliente
+                // Intenta insertar el cliente. Accede a los metadatos.
+                const userMetadata = data.user.user_metadata;
+                const { error: insertError } = await supabase
+                    .from('clientes')
+                    .insert([{
+                        id: data.user.id,
+                        nombre: userMetadata.nombre,
+                        telefono: userMetadata.telefono, // 'telefono' sin tilde
+                        email: data.user.email,
+                        fecha_nacimiento: userMetadata.fecha_nacimiento,
+                        sede: userMetadata.sede || 'brasil', // Usar sede del metadata o valor por defecto
+                        bloqueado: false, // Por defecto al insertar
+                        visitas: 0 // Por defecto al insertar
+                    }]);
 
-        // Verificar si es admin
+                if (insertError) {
+                    console.error("Error al insertar cliente en login:", insertError);
+                    // Puedes decidir si abortar el login o continuar con un mensaje de advertencia
+                    // Por ahora, lanzamos el error
+                    throw new Error("Error al crear perfil de cliente. Contacta soporte.");
+                }
+            } else if (clienteExistente && clienteExistente.bloqueado) { // Cliente existe y está bloqueado
+                await supabase.auth.signOut();
+                throw new Error('Usuario suspendido. Contacta al administrador.');
+            } else if (clienteCheckError) { // Otros errores al buscar cliente
+                throw clienteCheckError;
+            }
+        } else if (data.user && !data.user.email_confirmed_at) {
+             // Si el usuario inicia sesión pero no ha confirmado el email
+             await supabase.auth.signOut(); // Cierra la sesión inmediatamente
+             throw new Error('Por favor, confirma tu email para iniciar sesión.');
+        }
+
+        // Verificar si es admin (esta lógica se mantiene igual)
         const { data: admin, error: adminError } = await supabase
             .from('admin_users')
             .select('*')
             .eq('email', email)
             .single();
+
+        if (adminError && adminError.code !== 'PGRST116') { // No se encontró admin, pero si hay otro error, lanzarlo
+            console.error("Error al verificar admin:", adminError);
+        }
 
         if (admin) {
             return {
@@ -110,19 +144,7 @@ if (!data.user.email_confirmed_at) {
             };
         }
 
-        // Si no es admin, es cliente. Verificar estado
-        const { data: cliente, error: clienteError } = await supabase
-            .from('clientes')
-            .select('bloqueado')
-            .eq('id', data.user.id)
-            .single();
-
-        if (clienteError) throw clienteError;
-        if (cliente.bloqueado) {
-            await supabase.auth.signOut();
-            throw new Error('Usuario suspendido. Contacta al administrador.');
-        }
-
+        // Si no es admin y pasó la verificación de cliente (o se creó)
         return {
             success: true,
             user: data.user,
@@ -135,6 +157,8 @@ if (!data.user.email_confirmed_at) {
         let errorMessage = error.message;
         if (error.message.includes('Invalid login credentials')) {
             errorMessage = 'Email o contraseña incorrectos';
+        } else if (error.message.includes('Email not confirmed')) { // Manejar este error si Supabase lo envía
+             errorMessage = 'Por favor, confirma tu email para iniciar sesión.';
         }
 
         return {
@@ -171,21 +195,32 @@ export async function checkAuth() {
             throw error || new Error('No hay sesión activa');
         }
 
+        // Se obtiene el perfil del cliente
         const { data: cliente, error: clienteError } = await supabase
             .from('clientes')
             .select('*')
             .eq('id', user.id)
             .single();
 
-        if (clienteError) throw clienteError;
-        if (cliente.bloqueado) {
+        if (clienteError) {
+             // Si el cliente no se encuentra (PGRST116) y el email no está confirmado, podría ser un usuario sin perfil de cliente.
+             // Ocurrirá si el usuario aún no ha iniciado sesión después de confirmar su email.
+             console.warn("Cliente no encontrado en checkAuth, es posible que no haya iniciado sesión post-confirmación:", clienteError);
+             return {
+                isAuthenticated: true, // El usuario está autenticado en auth.users
+                user: user, // Solo datos de auth.users, sin datos de clientes
+                message: 'Sesión verificada, perfil de cliente pendiente de creación/carga.'
+             };
+        }
+        
+        if (cliente && cliente.bloqueado) { // 'bloqueado'
             await supabase.auth.signOut();
             throw new Error('Usuario suspendido');
         }
 
         return {
             isAuthenticated: true,
-            user: { ...user, ...cliente },
+            user: { ...user, ...cliente }, // Combina user de auth con cliente de clientes
             message: 'Sesión verificada'
         };
 
@@ -237,6 +272,7 @@ export async function getClientProfile(userId) {
 
 export async function updateProfile(userId, updates) {
     try {
+        // Asumo que 'updates' contendrá 'telefono' sin tilde si se actualiza.
         const { data, error } = await supabase
             .from('clientes')
             .update(updates)
