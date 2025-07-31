@@ -66,27 +66,36 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="container">
-            <div class="logo-container">
-                <a href="index.html" class="logo">
-                    <img src="assets/logoUnic.png" alt="The Unic Barber Logo" class="main-logo">
-                </a>
-            </div>
-            <div class="menu-toggle" id="mobile-menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <ul class="nav-list">
-                <li><a href="index.html">Inicio</a></li>
-                <li><a href="index.html#servicios">Servicios</a></li>
-                <li><a href="index.html#barberos">Nuestros Barberos</a></li>
-                <li><a href="index.html#galeria">Galería</a></li>
-                <li><a href="index.html#sedes">Sedes</a></li>
-                <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
-            </ul>
+    <div class="container">
+        <div class="logo-container">
+            <a href="index.html" class="logo">
+                <img src="assets/logoUnic.png" alt="The Unic Barber Logo" class="main-logo">
+            </a>
         </div>
-    </nav>
+        <div class="menu-toggle" id="mobile-menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <ul class="nav-list">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="index.html#servicios">Servicios</a></li>
+            <li><a href="index.html#barberos">Nuestros Barberos</a></li>
+            <li><a href="index.html#galeria">Galería</a></li>
+            <li><a href="index.html#sedes">Sedes</a></li>
+            <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
+            <li id="user-menu-container" style="display: none;">
+                <a href="#" id="auth-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-email"></span>
+                </a>
+                <div id="user-dropdown">
+                    <a href="#" id="logout-link">Cerrar sesión</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
 
 <section class="booking-form">
     <div class="container">

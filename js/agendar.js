@@ -38,17 +38,32 @@ document.addEventListener('DOMContentLoaded', async function () {
     const notesTextarea = document.getElementById('notes');
 
     // --- VERIFICACIÓN DE SESIÓN Y ESTADO DE CLIENTE ---
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        window.location.href = 'login.html';
-        return;
-    } else {
-        // Mostrar opción de cerrar sesión
-        const logoutLi = document.getElementById('logout-li');
-        if (logoutLi) {
-            logoutLi.style.display = 'block';
-        }
+const { data: { user }, error: authError } = await supabase.auth.getUser();
+if (authError || !user) {
+    window.location.href = 'login.html';
+    return;
+} else {
+    // Mostrar menú de usuario
+    const userMenu = document.getElementById('user-menu-container');
+    const userEmail = document.getElementById('user-email');
+    const logoutLink = document.getElementById('logout-link');
+    
+    if (userMenu && userEmail) {
+        userMenu.style.display = 'flex';
+        userEmail.textContent = user.email;
     }
+    
+    // Manejar cierre de sesión
+    if (logoutLink) {
+        logoutLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const { error } = await supabase.auth.signOut();
+            if (!error) {
+                window.location.href = 'index.html';
+            }
+        });
+    }
+}
     // Precargar información del usuario y verificar estado 'bloqueado'
     let clienteData = null; // Variable para almacenar los datos del cliente logueado
     if (user) {

@@ -1221,3 +1221,98 @@ footer {
     border: 1px solid #ef9a9a;
     display: none;
 }
+/* ==================== MENÚ DE USUARIO Y CERRAR SESIÓN ==================== */
+
+/* Contenedor del menú de usuario */
+#user-menu-container {
+    position: relative;
+    margin-left: auto;
+}
+
+/* Estilo del enlace principal (email del usuario) */
+#auth-link {
+    color: var(--secondary-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.5rem 1rem;
+}
+
+#auth-link:hover {
+    color: var(--accent-color);
+}
+
+#auth-link i {
+    font-size: 1rem;
+}
+
+/* Dropdown del menú de usuario */
+#user-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: var(--secondary-color);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    z-index: 1000;
+    display: none;
+}
+
+#user-dropdown a {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+#user-dropdown a:hover {
+    background-color: var(--light-gray);
+    color: var(--accent-color);
+}
+
+#user-menu-container:hover #user-dropdown {
+    display: block;
+}
+
+/* Estilos específicos para móviles */
+@media (max-width: 768px) {
+    #user-menu-container {
+        width: 100%;
+        margin: 1rem 0 0;
+        padding: 1rem 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    #auth-link {
+        justify-content: center;
+        padding: 0.75rem;
+    }
+    
+    #user-dropdown {
+        position: static;
+        display: block !important;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        margin-top: 0.5rem;
+    }
+    
+    #user-dropdown a {
+        color: var(--secondary-color);
+        text-align: center;
+        padding: 0.5rem;
+    }
+    
+    #user-dropdown a:hover {
+        background: transparent;
+        color: var(--accent-color);
+    }
+    
+    #user-menu-container:hover #user-dropdown {
+        display: block !important;
+    }
+}
