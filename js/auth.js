@@ -13,30 +13,9 @@ export async function registerUser(email, password, userData) {
             throw new Error('Faltan campos obligatorios');
         }
 
-        // Paso 1: Verificación de duplicados para evitar registros con el mismo email o teléfono.
-        const { data: existingUsers, error: checkError } = await supabase
-            .from('clientes')
-            .select('email, telefono')
-            .or(`email.eq.${email},telefono.eq.${userData.telefono}`);
-
-        if (checkError) throw checkError;
-
-        if (existingUsers?.length > 0) {
-            const emailExists = existingUsers.some(u => u.email === email);
-            const phoneExists = existingUsers.some(u => u.telefono === userData.telefono);
-
-            if (emailExists && phoneExists) {
-                throw new Error('El email y teléfono ya están registrados');
-            } else if (emailExists) {
-                throw new Error('Este email ya está registrado');
-            } else if (phoneExists) {
-                throw new Error('Este número de teléfono ya está registrado');
-            }
-        }
-
-        // Paso 2: Registrar el usuario en Supabase Auth.
-        // Se guarda la información del cliente en el campo 'metadata'
-        // y se usa la URL de redirección correcta.
+        // Se elimina la verificación manual de duplicados en la tabla 'clientes'
+        // para evitar la vulnerabilidad. Ahora se confía en la validación de Supabase.
+        
         const { data, error: authError } = await supabase.auth.signUp({
             email,
             password,
@@ -51,7 +30,13 @@ export async function registerUser(email, password, userData) {
             }
         });
 
-        if (authError) throw authError;
+        if (authError) {
+            // Manejo específico del error de correo ya registrado
+            if (authError.message.includes('Email address already registered')) {
+                throw new Error('Este email ya está registrado. Por favor, inicia sesión.');
+            }
+            throw authError;
+        }
 
         return {
             success: true,
@@ -84,6 +69,13 @@ export async function loginUser(email, password) {
         });
 
         if (error) {
+            // Manejo de errores específicos para el inicio de sesión
+            if (error.message.includes('Invalid login credentials')) {
+                throw new Error('Credenciales inválidas. Por favor, revisa tu email y contraseña.');
+            }
+            if (error.message.includes('Email not confirmed')) {
+                throw new Error('Por favor, confirma tu correo electrónico antes de iniciar sesión.');
+            }
             throw error;
         }
 
