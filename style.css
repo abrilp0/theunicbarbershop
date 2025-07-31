@@ -1066,19 +1066,7 @@ footer {
     .promo-dates {
         font-style: italic;
     }
- /* ==================== MENÚ HAMBURGUESA Y USUARIO ==================== */
-
-/* Estilos base del navbar */
-.navbar {
-    background-color: var(--primary-color);
-    color: var(--secondary-color);
-    padding: 1rem 0;
-    position: fixed;
-    width: 100%;
-    top: 0;
-    z-index: 1000;
-    box-shadow: 0 2px 10px rgba(255, 13, 13, 0.1);
-}
+/* ==================== MENÚ HAMBURGUESA Y USUARIO (ESCRITORIO) ==================== */
 
 /* Contenedor del menú de usuario */
 #user-menu-container {
@@ -1095,6 +1083,7 @@ footer {
     align-items: center;
     gap: 8px;
     padding: 0.5rem 1rem;
+    transition: color 0.3s;
 }
 
 #auth-link:hover {
@@ -1116,7 +1105,7 @@ footer {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     min-width: 180px;
     z-index: 1000;
-    display: none;
+    display: none; /* Oculto por defecto */
 }
 
 #user-dropdown a {
@@ -1132,21 +1121,20 @@ footer {
     color: var(--accent-color);
 }
 
+/* Muestra el menú desplegable al pasar el mouse por encima */
 #user-menu-container:hover #user-dropdown {
     display: block;
 }
 
-/* Menú hamburguesa */
+/* ==================== MENÚ HAMBURGUESA Y USUARIO (MÓVIL) ==================== */
 .menu-toggle {
-    display: none;
+    display: none; /* Oculto en escritorio */
     cursor: pointer;
     flex-direction: column;
     justify-content: space-between;
     width: 30px;
     height: 21px;
-    position: absolute;
-    right: 20px;
-    top: 25px;
+    position: relative;
     z-index: 1001;
 }
 
@@ -1158,25 +1146,18 @@ footer {
     transition: all 0.3s;
 }
 
-/* Estilos para móviles */
+
 @media (max-width: 768px) {
     .menu-toggle {
-        display: flex;
-        background: rgba(0,0,0,0.7);
-        padding: 10px;
-        border-radius: 4px;
+        display: flex; /* Muestra el botón de menú en móvil */
     }
     
-    .menu-toggle span {
-        background-color: var(--accent-color);
-    }
-    
-    .nav-list {
+    .navbar .nav-list {
         position: fixed;
-        top: 80px;
+        top: 60px; /* Ajusta este valor si tu navbar es más alto */
         left: -100%;
         width: 100%;
-        height: calc(100vh - 80px);
+        height: calc(100vh - 60px);
         background-color: var(--primary-color);
         flex-direction: column;
         align-items: center;
@@ -1186,7 +1167,7 @@ footer {
     }
     
     .nav-list.active {
-        left: 0;
+        left: 0; /* Muestra el menú cuando está activo */
     }
     
     .nav-list li {
@@ -1200,11 +1181,12 @@ footer {
         padding: 1rem;
     }
     
-    /* Menú de usuario en móviles */
+    /* Adaptamos el menú de usuario para que sea un ítem más en la lista */
     #user-menu-container {
+        display: block !important; /* Aseguramos que se muestre en el menú móvil */
         width: 100%;
-        margin: 1rem 0 0;
-        padding: 1rem 0;
+        margin-top: 1rem;
+        padding-top: 1rem;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
     
@@ -1214,13 +1196,14 @@ footer {
         font-size: 1.1rem;
     }
     
+    /* El dropdown ahora se muestra siempre debajo del email en móvil */
     #user-dropdown {
         position: static;
-        display: block !important;
+        display: block;
         background: transparent;
         border: none;
         box-shadow: none;
-        margin-top: 0.5rem;
+        min-width: unset;
     }
     
     #user-dropdown a {
@@ -1256,4 +1239,92 @@ footer {
     color: #2e7d32;
     border: 1px solid #a5d6a7;
     display: block;
+}
+
+/* Estilos de la página de login, si existen */
+.login-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 15px 20px;
+    background: var(--light-gray);
+}
+
+.login-container form {
+    background: var(--secondary-color);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
+.login-container .logo-login {
+    width: 100px;
+    margin-bottom: 20px;
+}
+
+.login-container h2 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+}
+
+.login-container .form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.login-container label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.login-container input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.login-container .btn-login {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+    margin-top: 10px;
+}
+
+.login-container .btn-login:hover {
+    background-color: var(--dark-gray);
+    transform: translateY(-2px);
+}
+
+.login-container .btn-login i {
+    margin-right: 8px;
+}
+
+.login-container .login-links {
+    margin-top: 20px;
+}
+
+.login-container .login-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.login-container .login-links a:hover {
+    color: var(--accent-color);
 }

@@ -4,17 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - THE UNIC BARBER</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="assets/logo.png" type="image/png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Estilos generales */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #ffffff;
+            --accent-color: #d4af37;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
         }
 
         .container {
@@ -22,90 +44,95 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 15px;
-        }
-
-        /* Navbar */
-        .navbar {
-            background-color: #000;
-            color: white;
-            padding: 15px 0;
-            position: relative;
-            z-index: 1000;
-        }
-
-        .navbar .container {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .navbar .logo {
+        .logo {
             display: flex;
             align-items: center;
             text-decoration: none;
-            color: white;
+            color: var(--secondary-color);
             font-weight: bold;
             font-size: 1.2rem;
         }
 
-        .navbar .logo img {
-            width: 40px;
+        .logo img {
+            height: 40px;
             margin-right: 10px;
         }
 
-        .navbar .nav-list ul {
+        /* Menú hamburguesa */
+        .menu-toggle {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 30px;
+            height: 21px;
+        }
+
+        .menu-toggle span {
+            display: block;
+            height: 3px;
+            width: 100%;
+            background-color: var(--secondary-color);
+            transition: all 0.3s;
+        }
+
+        .nav-list {
+            display: flex;
             list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
         }
 
-        .navbar .nav-list li {
-            margin-left: 20px;
+        .nav-list li {
+            margin-left: 1.5rem;
         }
 
-        .navbar .nav-list li a {
-            color: white;
+        .nav-list a {
+            color: var(--secondary-color);
             text-decoration: none;
-            transition: color 0.3s;
             font-weight: 500;
+            transition: color 0.3s;
         }
 
-        .navbar .nav-list li a:hover {
-            color: #d4af37;
+        .nav-list a:hover {
+            color: var(--accent-color);
         }
 
-        /* Login Hero */
-        .login-hero {
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
-                        url('assets/fondoRegistro.jpg') no-repeat center center/cover;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 60px 0;
-        }
-
+        /* Login Container */
         .login-container {
-            max-width: 500px;
-            width: 90%;
-            background: white;
-            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 6rem 1rem 2rem;
+        }
+
+        .login-box {
+            background-color: var(--secondary-color);
+            padding: 2.5rem;
             border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
             text-align: center;
         }
 
-        .login-container h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: #000;
-            font-size: 1.75rem;
+        .login-logo {
+            height: 80px;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-box h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
             position: relative;
         }
 
-        .login-container h2::after {
+        .login-box h2::after {
             content: '';
             position: absolute;
             bottom: -10px;
@@ -113,234 +140,217 @@
             transform: translateX(-50%);
             width: 60px;
             height: 3px;
-            background: #d4af37;
+            background-color: var(--accent-color);
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
             text-align: left;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 0.5rem;
             font-weight: 500;
-            color: #333;
-            font-size: 0.9rem;
+            color: var(--dark-gray);
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px 15px;
+            padding: 0.8rem 1rem;
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 1rem;
-            transition: border 0.3s;
+            transition: all 0.3s;
         }
 
         .form-group input:focus {
-            border-color: #d4af37;
+            border-color: var(--accent-color);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
         }
 
         .btn-login {
             width: 100%;
-            background: #000;
-            color: white;
-            padding: 14px;
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
             border: none;
-            border-radius: 6px;
+            padding: 0.8rem;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: bold;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            margin-top: 0.5rem;
         }
 
         .btn-login:hover {
-            background: #d4af37;
-            color: #000;
-        }
-
-        #mensaje {
-            margin-top: 15px;
-            text-align: center;
-            min-height: 20px;
-            font-size: 0.9rem;
-        }
-
-        .logo-login {
-            height: 80px;
-            margin-bottom: 20px;
+            background-color: var(--accent-color);
+            color: var(--primary-color);
         }
 
         .login-links {
-            margin-top: 20px;
+            margin-top: 1.5rem;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
         }
 
         .login-links a {
-            color: #d4af37;
+            color: var(--accent-color);
             text-decoration: none;
             font-weight: 500;
             transition: color 0.3s;
         }
 
         .login-links a:hover {
-            color: #000;
             text-decoration: underline;
         }
 
-        .login-message {
-            background-color: #fff8e1;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border-left: 4px solid #d4af37;
+        /* Mensajes */
+        .message {
+            padding: 0.8rem;
+            margin: 1rem 0;
+            border-radius: 6px;
             text-align: center;
-        }
-
-        .login-message p {
-            margin: 5px 0;
-            color: #333;
-        }
-
-        /* Modal de Recuperación */
-        .auth-modal {
             display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
         }
 
-        .auth-modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
+        .message.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            display: block;
+        }
+
+        .message.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+            display: block;
+        }
+
+        /* Menú de usuario */
+        #user-menu-container {
             position: relative;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-            animation: modalFadeIn 0.4s;
+            display: none;
         }
 
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .auth-modal h2 {
-            color: #000;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
+        #auth-link {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            gap: 0.5rem;
+            color: var(--secondary-color);
+            text-decoration: none;
         }
 
-        .auth-modal p {
-            color: #555;
-            margin-bottom: 20px;
-            line-height: 1.5;
+        #user-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: var(--secondary-color);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-width: 150px;
+            z-index: 1000;
+            display: none;
         }
 
-        .auth-modal-btn {
-            padding: 12px 25px;
-            border-radius: 6px;
-            font-weight: 600;
+        #user-dropdown a {
+            display: block;
+            padding: 0.5rem 1rem;
+            color: var(--primary-color);
             text-decoration: none;
             transition: all 0.3s;
-            display: inline-block;
-            margin-top: 15px;
         }
 
-        .auth-modal-btn-primary {
-            background: #000;
-            color: white;
-            border: 2px solid #000;
+        #user-dropdown a:hover {
+            background-color: var(--light-gray);
+            color: var(--accent-color);
         }
 
-        .auth-modal-btn-primary:hover {
-            background: #333;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #777;
-            transition: color 0.3s;
-        }
-
-        .close-modal:hover {
-            color: #000;
+        #user-menu-container:hover #user-dropdown {
+            display: block;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .navbar .nav-list {
-                display: none;
+            .menu-toggle {
+                display: flex;
             }
-            
-            .login-container {
-                padding: 25px 20px;
+
+            .nav-list {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 100%;
+                background-color: var(--primary-color);
+                flex-direction: column;
+                align-items: center;
+                padding: 1rem 0;
+                transition: left 0.3s ease;
             }
-            
-            .logo-login {
-                height: 70px;
+
+            .nav-list.active {
+                left: 0;
+            }
+
+            .nav-list li {
+                margin: 0.5rem 0;
+                width: 100%;
+                text-align: center;
+            }
+
+            .nav-list a {
+                display: block;
+                padding: 0.5rem 1rem;
+            }
+
+            /* Menú de usuario en móviles */
+            #user-menu-container {
+                width: 100%;
+                margin-top: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid rgba(255,255,255,0.1);
+            }
+
+            #user-dropdown {
+                position: static;
+                display: block !important;
+                background: transparent;
+                border: none;
+                box-shadow: none;
+                margin-top: 0.5rem;
+            }
+
+            #user-dropdown a {
+                color: var(--accent-color) !important;
+                text-align: center;
+                font-weight: bold;
+            }
+
+            #user-dropdown a:hover {
+                background: transparent;
             }
         }
     </style>
 </head>
 <body>
-    <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - THE UNIC BARBER</title>
-    <!-- Agrega esto en el head -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="assets/logo.png" type="image/png">
-</head>
-<body>
     <!-- Navbar -->
     <nav class="navbar">
         <div class="container">
-            <div class="logo-container">
-                <a href="index.html" class="logo">
-                    <img src="assets/logo.png" alt="The Unic Barber Logo" class="main-logo">
-                    <span>THE UNIC BARBER</span>
-                </a>
-            </div>
+            <a href="index.html" class="logo">
+                <img src="assets/logo.png" alt="The Unic Barber Logo">
+                <span>THE UNIC BARBER</span>
+            </a>
             <div class="menu-toggle" id="mobile-menu">
                 <span></span>
                 <span></span>
                 <span></span>
             </div>
-            <ul class="nav-list">
+            <ul class="nav-list" id="navList">
                 <li><a href="index.html">Inicio</a></li>
                 <li><a href="registro.html">Registrarse</a></li>
-                <li id="user-menu-container" style="display: none;">
+                <li id="user-menu-container">
                     <a href="#" id="auth-link">
                         <i class="fas fa-user"></i>
                         <span id="user-email"></span>
@@ -353,50 +363,13 @@
         </div>
     </nav>
 
-    <!-- Formulario de login -->
-    <div class="container">
-        <!-- Agrega esto justo antes del formulario -->
-        <div id="message" class="message" style="display: none;"></div>
-        
-        <form id="loginForm" class="form-container">
-            <!-- resto del formulario -->
-        </form>
-    </div>
-
-    <script src="js/login.js"></script>
-</body>
-</html>
-
-    <!-- Modal de Recuperación de Contraseña -->
-    <div id="passwordResetModal" class="auth-modal">
-        <div class="auth-modal-content">
-            <button class="close-modal" onclick="closeResetModal()">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2><i class="fas fa-key"></i> Recuperar Contraseña</h2>
-            <p>Ingresa tu correo electrónico para recibir un enlace de recuperación:</p>
-            
-            <div class="form-group">
-                <input type="email" id="resetEmail" placeholder="tucorreo@ejemplo.com" class="form-control">
-            </div>
-            
-            <button id="sendResetLink" class="auth-modal-btn auth-modal-btn-primary">
-                <i class="fas fa-paper-plane"></i> Enviar Enlace
-            </button>
-            
-            <p id="resetMessage" style="margin-top: 15px;"></p>
-        </div>
-    </div>
-
-    <!-- Sección de Login -->
-    <section class="login-hero">
-        <div class="login-container">
-            <img src="assets/logo.png" alt="Logo" class="logo-login">
+    <!-- Login Container -->
+    <div class="login-container">
+        <div class="login-box">
+            <img src="assets/logo.png" alt="Logo" class="login-logo">
             <h2>Iniciar Sesión</h2>
             
-            <div class="login-message">
-                <p>Para poder agendar una cita, debes iniciar sesión.</p>
-            </div>
+            <div id="login-message" class="message"></div>
             
             <form id="loginForm">
                 <div class="form-group">
@@ -405,10 +378,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label for="password">Contraseña</label>
-                        <a href="#" id="forgotPassword" style="font-size: 0.9rem;">¿Olvidaste tu contraseña?</a>
-                    </div>
+                    <label for="password">Contraseña</label>
                     <input type="password" id="password" name="password" required>
                 </div>
                 
@@ -417,29 +387,29 @@
                 </button>
             </form>
             
-            <p id="mensaje"></p>
-            
             <div class="login-links">
                 <a href="registro.html">¿No tienes cuenta? Regístrate aquí</a>
             </div>
         </div>
-    </section>
+    </div>
 
-    <script type="module" src="./js/supabase.js"></script>
-    <script type="module" src="./js/auth.js"></script>
-    <script type="module" src="./js/login.js"></script>
-    
+    <!-- Scripts -->
+    <script src="js/supabase.js" type="module"></script>
+    <script src="js/login.js" type="module"></script>
+
     <script>
-        // Este script es solo para lógica simple directamente en el HTML,
-        // como la gestión del parámetro de redirección, que no necesita estar en un módulo.
+        // Manejo del menú hamburguesa
+        document.getElementById('mobile-menu').addEventListener('click', function() {
+            document.getElementById('navList').classList.toggle('active');
+        });
+
+        // Manejo de redirección
         const urlParams = new URLSearchParams(window.location.search);
         const redirect = urlParams.get('redirect');
-
         if (redirect) {
             localStorage.setItem('redirectAfterAuth', redirect);
         }
     </script>
-</body>
-</html>
+    
 </body>
 </html>
