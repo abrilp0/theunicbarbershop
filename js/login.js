@@ -1,3 +1,5 @@
+// En login.js, al inicio del archivo:
+import { supabase } from './supabase.js';
 // Esperar a que Supabase esté disponible
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos del DOM

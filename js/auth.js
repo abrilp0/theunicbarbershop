@@ -1,150 +1,222 @@
 // js/auth.js
-
 import { supabase } from './supabase.js';
 
 /**
  * Registra un nuevo usuario en Supabase Auth y crea un perfil de cliente.
- * NOTA: La tabla 'clientes' ahora se llena con un Trigger de la base de datos,
- * por lo que el código de inserción directa ha sido eliminado.
+ * @param {string} email - Email del usuario
+ * @param {string} password - Contraseña del usuario
+ * @param {object} userData - Datos adicionales del usuario
+ * @returns {Promise<object>} - Resultado del registro
  */
 export async function registerUser(email, password, userData) {
     try {
-        if (!email || !password || !userData?.nombre || !userData?.telefono) {
-            throw new Error('Faltan campos obligatorios');
+        // Validación de campos obligatorios
+        if (!email || !password) {
+            throw new Error('Email y contraseña son obligatorios');
+        }
+        if (!userData?.nombre || !userData?.telefono || !userData?.fecha_nacimiento) {
+            throw new Error('Nombre, teléfono y fecha de nacimiento son obligatorios');
         }
 
-        // Se elimina la verificación manual de duplicados en la tabla 'clientes'
-        // para evitar la vulnerabilidad. Ahora se confía en la validación de Supabase.
-        
-        const { data, error: authError } = await supabase.auth.signUp({
+        // Verificar si el email o teléfono ya existen
+        const { data: existingUsers, error: checkError } = await supabase
+            .from('clientes')
+            .select('email, telefono')
+            .or(`email.eq.${email},telefono.eq.${userData.telefono}`);
+
+        if (checkError) throw checkError;
+
+        if (existingUsers?.length > 0) {
+            const emailExists = existingUsers.some(u => u.email === email);
+            const phoneExists = existingUsers.some(u => u.telefono === userData.telefono);
+
+            if (emailExists && phoneExists) {
+                throw new Error('El email y teléfono ya están registrados');
+            } else if (emailExists) {
+                throw new Error('Este email ya está registrado');
+            } else if (phoneExists) {
+                throw new Error('Este teléfono ya está registrado');
+            }
+        }
+
+        // Registrar usuario en Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
                 data: {
-                    nombre: userData.nombre,
-                    telefono: userData.telefono,
-                    fecha_nacimiento: userData.fecha_nacimiento,
-                    sede: userData.sede || 'brasil'
+                    full_name: userData.nombre,
+                    phone: userData.telefono
                 },
-                emailRedirectTo: 'https://theunicbarbershop.cl/login.html'
+                emailRedirectTo: `${window.location.origin}/login.html`
             }
         });
 
-        if (authError) {
-            // Manejo específico del error de correo ya registrado
-            if (authError.message.includes('Email address already registered')) {
-                throw new Error('Este email ya está registrado. Por favor, inicia sesión.');
-            }
-            throw authError;
+        if (authError) throw authError;
+        if (!authData.user) throw new Error('No se pudo crear el usuario');
+
+        // Crear perfil en tabla clientes
+        const { error: clientError } = await supabase
+            .from('clientes')
+            .insert([{
+                id: authData.user.id,
+                nombre: userData.nombre,
+                telefono: userData.telefono,
+                email: email,
+                fecha_nacimiento: userData.fecha_nacimiento,
+                sede: userData.sede || 'brasil',
+                visitas: 0,
+                bloqueado: false,
+                created_at: new Date().toISOString()
+            }]);
+
+        if (clientError) {
+            // Revertir creación en Auth si falla en clientes
+            await supabase.auth.admin.deleteUser(authData.user.id);
+            throw new Error('Error al crear perfil de cliente');
         }
 
         return {
             success: true,
-            user: data.user,
-            message: 'Registro exitoso. Por favor verifica tu email para iniciar sesión.'
+            user: authData.user,
+            message: 'Registro exitoso. Por favor verifica tu email.'
         };
 
     } catch (error) {
         console.error('Error en registerUser:', error);
         return {
             success: false,
-            error: error.message || 'Error desconocido',
-            code: error.code || 'UNKNOWN_ERROR'
+            error: error.message,
+            code: error.code || 'REGISTER_ERROR'
         };
     }
 }
 
 /**
  * Inicia sesión para un usuario existente.
+ * @param {string} email - Email del usuario
+ * @param {string} password - Contraseña del usuario
+ * @returns {Promise<object>} - Resultado del login
  */
 export async function loginUser(email, password) {
     try {
         if (!email || !password) {
-            throw new Error('Faltan campos obligatorios');
+            throw new Error('Email y contraseña son obligatorios');
         }
 
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
-            password,
+            password
         });
 
         if (error) {
-            // Manejo de errores específicos para el inicio de sesión
-            if (error.message.includes('Invalid login credentials')) {
-                throw new Error('Credenciales inválidas. Por favor, revisa tu email y contraseña.');
-            }
             if (error.message.includes('Email not confirmed')) {
-                throw new Error('Por favor, confirma tu correo electrónico antes de iniciar sesión.');
+                throw new Error('Por favor verifica tu email antes de iniciar sesión');
+            }
+            if (error.message.includes('Invalid login credentials')) {
+                throw new Error('Credenciales inválidas');
             }
             throw error;
         }
 
-        // Obtener el rol del usuario desde la tabla 'clientes' o 'empleados'
+        // Verificar si el usuario existe en la tabla clientes
         const { data: cliente, error: clienteError } = await supabase
             .from('clientes')
             .select('is_admin')
-            .eq('email', email)
+            .eq('id', data.user.id)
             .single();
 
-        let isAdmin = false;
-        if (cliente) {
-            isAdmin = cliente.is_admin || false;
+        if (clienteError && clienteError.code !== 'PGRST116') { // 116 = no rows found
+            console.error('Error al verificar cliente:', clienteError);
+        }
+
+        // Redirigir según el tipo de usuario
+        if (cliente?.is_admin) {
+            window.location.href = '/admin/dashboard.html';
+        } else {
+            window.location.href = '/agendar.html';
         }
 
         return {
             success: true,
             user: data.user,
-            isAdmin,
-            message: 'Inicio de sesión exitoso.'
+            isAdmin: cliente?.is_admin || false
         };
 
     } catch (error) {
         console.error('Error en loginUser:', error);
         return {
             success: false,
-            user: null,
-            isAdmin: false,
-            message: 'Credenciales inválidas.',
+            error: error.message,
+            code: error.code || 'LOGIN_ERROR'
+        };
+    }
+}
+
+/**
+ * Verifica la sesión actual del usuario.
+ * @returns {Promise<object>} - Estado de la sesión
+ */
+export async function checkSession() {
+    try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) throw error;
+        if (!data.session) return { success: false, user: null };
+
+        // Verificar si es admin
+        const { data: cliente } = await supabase
+            .from('clientes')
+            .select('is_admin')
+            .eq('id', data.session.user.id)
+            .single();
+
+        return {
+            success: true,
+            user: data.session.user,
+            isAdmin: cliente?.is_admin || false
+        };
+
+    } catch (error) {
+        console.error('Error en checkSession:', error);
+        return {
+            success: false,
             error: error.message
         };
     }
 }
 
 /**
- * Verifica si el usuario tiene una promoción de cumpleaños.
+ * Verifica si el usuario tiene promoción de cumpleaños.
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<object>} - Resultado de la verificación
  */
 export async function checkBirthdayPromo(userId) {
     try {
-        if (!userId) {
-            throw new Error('ID de usuario no proporcionado.');
-        }
+        if (!userId) throw new Error('ID de usuario requerido');
 
         const { data: cliente, error } = await supabase
             .from('clientes')
-            .select('*')
-            .eq('auth_user_id', userId)
+            .select('visitas, fecha_nacimiento')
+            .eq('id', userId)
             .single();
 
-        if (error || !cliente) {
-            console.error('Cliente no encontrado:', error);
-            return { success: false, error: 'Cliente no encontrado.' };
-        }
+        if (error) throw error;
+        if (!cliente) throw new Error('Cliente no encontrado');
 
         const hoy = new Date();
-        const cumpleanos = new Date(cliente.fecha_nacimiento);
-        const esCumple = hoy.getMonth() === cumpleanos.getMonth() && hoy.getDate() === cumpleanos.getDate();
-
-        // La promoción requiere ser su cumpleaños Y tener al menos 4 visitas
-        const tienePromo = esCumple && (cliente.visitas >= 4);
+        const cumple = new Date(cliente.fecha_nacimiento);
+        const esCumple = hoy.getMonth() === cumple.getMonth() && hoy.getDate() === cumple.getDate();
+        const tienePromo = esCumple && cliente.visitas >= 4;
 
         return {
             success: true,
             tienePromo,
             esCumple,
             visitas: cliente.visitas,
-            message: tienePromo
-                ? '¡Feliz cumpleaños! Tienes derecho a un corte gratis.'
-                : esCumple
+            message: tienePromo 
+                ? '¡Feliz cumpleaños! Tienes un corte gratis.' 
+                : esCumple 
                     ? 'Feliz cumpleaños (necesitas 4 visitas para la promoción)'
                     : 'Hoy no es tu cumpleaños'
         };
@@ -153,15 +225,21 @@ export async function checkBirthdayPromo(userId) {
         console.error('Error en checkBirthdayPromo:', error);
         return {
             success: false,
-            error: error.message,
-            code: error.code || 'PROMO_CHECK_ERROR'
+            error: error.message
         };
     }
 }
 
+/**
+ * Envía email para restablecer contraseña.
+ * @param {string} email - Email del usuario
+ * @returns {Promise<object>} - Resultado de la operación
+ */
 export async function resetPassword(email) {
     try {
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        if (!email) throw new Error('Email es requerido');
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${window.location.origin}/actualizar-password.html`
         });
 
@@ -169,16 +247,37 @@ export async function resetPassword(email) {
 
         return {
             success: true,
-            message: 'Email de recuperación enviado. Revisa tu bandeja de entrada.'
+            message: 'Email de recuperación enviado'
         };
 
     } catch (error) {
         console.error('Error en resetPassword:', error);
         return {
             success: false,
-            error: error.message.includes('user not found')
-                ? 'No existe una cuenta con este email'
-                : 'Error al enviar email de recuperación'
+            error: error.message.includes('user not found') 
+                ? 'Email no registrado' 
+                : 'Error al enviar email'
+        };
+    }
+}
+
+/**
+ * Cierra la sesión del usuario.
+ * @returns {Promise<object>} - Resultado del logout
+ */
+export async function logoutUser() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        
+        window.location.href = '/login.html';
+        return { success: true };
+
+    } catch (error) {
+        console.error('Error en logoutUser:', error);
+        return {
+            success: false,
+            error: error.message
         };
     }
 }
