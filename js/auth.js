@@ -2,16 +2,16 @@
 import { supabase } from './supabase.js';
 
 /**
- * Registra un nuevo usuario con verificación de duplicados e inserción segura
+ * Registra un nuevo usuario con verificación de duplicados
  */
 export async function registerUser(email, password, userData) {
     try {
         // Validación de campos obligatorios
-        if (!email || !password || !userData?.nombre || !userData?.telefono || !userData?.fecha_nacimiento) {
-            throw new Error('Todos los campos son obligatorios');
+        if (!email || !password || !userData?.nombre || !userData?.telefono) {
+            throw new Error('Faltan campos obligatorios');
         }
 
-        // 1. Verificar duplicados usando función stored
+        // 1. Verificar duplicados
         const { data: duplicateCheck, error: checkError } = await supabase
             .rpc('check_duplicate_client', {
                 p_email: email,
@@ -19,8 +19,8 @@ export async function registerUser(email, password, userData) {
             });
 
         if (checkError) throw checkError;
-        if (duplicateCheck.exists) {
-            throw new Error(duplicateCheck.message || 'El usuario ya existe');
+        if (duplicateCheck?.exists) {
+            throw new Error(duplicateCheck.message || 'Usuario ya registrado');
         }
 
         // 2. Registrar en Auth
@@ -29,8 +29,8 @@ export async function registerUser(email, password, userData) {
             password,
             options: {
                 data: {
-                    nombre: userData.nombre,
-                    telefono: userData.telefono
+                    full_name: userData.nombre,
+                    phone: userData.telefono
                 },
                 emailRedirectTo: `${window.location.origin}/login.html`
             }
@@ -39,23 +39,27 @@ export async function registerUser(email, password, userData) {
         if (authError) throw authError;
         if (!authData.user) throw new Error('Error al crear usuario');
 
-        // 3. Crear perfil usando función stored (evita problemas RLS)
-        const { data: profileData, error: profileError } = await supabase
-            .rpc('create_client_profile', {
-                p_user_id: authData.user.id,
-                p_email: email,
-                p_nombre: userData.nombre,
-                p_telefono: userData.telefono,
-                p_fecha_nacimiento: userData.fecha_nacimiento,
-                p_sede: userData.sede || 'brasil'
+        // 3. Crear perfil en clientes
+        const { error: clientError } = await supabase
+            .from('clientes')
+            .insert({
+                id: authData.user.id,
+                email: email,
+                nombre: userData.nombre,
+                telefono: userData.telefono,
+                fecha_nacimiento: userData.fecha_nacimiento,
+                sede: userData.sede || 'brasil',
+                visitas: 0,
+                bloqueado: false,
+                created_at: new Date().toISOString()
             });
 
-        if (profileError) throw new Error('Error al crear perfil: ' + profileError.message);
+        if (clientError) throw new Error('Error al crear perfil: ' + clientError.message);
 
         return {
             success: true,
             user: authData.user,
-            message: 'Registro exitoso. Verifica tu email para activar tu cuenta.'
+            message: 'Registro exitoso. Verifica tu email.'
         };
 
     } catch (error) {
@@ -69,55 +73,63 @@ export async function registerUser(email, password, userData) {
 }
 
 /**
- * Inicio de sesión con redirección automática para admins
+ * Inicio de sesión con detección de sede para admins
  */
 export async function loginUser(email, password) {
     try {
+        // 1. Autenticación básica
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
         });
 
         if (error) {
-            // Manejo mejorado de errores
             if (error.message.includes('Email not confirmed')) {
                 throw new Error('Por favor verifica tu email primero');
             }
             throw error;
         }
 
-        // Verificar rol de admin
-        const { data: profile } = await supabase
-            .rpc('get_user_profile', {
+        // 2. Verificar si es admin y obtener sede
+        const { data: adminData, error: adminError } = await supabase
+            .rpc('get_admin_data', {
                 p_user_id: data.user.id
             });
 
-        // Redirección automática
-        if (profile?.is_admin) {
-            window.location.href = '/admin/dashboard.html';
+        // 3. Redirección según tipo de usuario
+        if (adminData?.is_admin) {
+            // Redirigir admin a dashboard de su sede
+            window.location.href = `/admin/${adminData.sede}/dashboard.html`;
+            return {
+                success: true,
+                user: data.user,
+                isAdmin: true,
+                sede: adminData.sede
+            };
         } else {
+            // Redirigir cliente normal
             window.location.href = '/agendar.html';
+            return {
+                success: true,
+                user: data.user,
+                isAdmin: false
+            };
         }
-
-        return {
-            success: true,
-            user: data.user,
-            isAdmin: profile?.is_admin || false
-        };
 
     } catch (error) {
         console.error('Error en loginUser:', error);
         return {
             success: false,
             error: error.message.includes('Invalid login credentials') 
-                ? 'Email o contraseña incorrectos' 
-                : error.message
+                ? 'Credenciales incorrectas' 
+                : error.message,
+            code: error.code || 'LOGIN_ERROR'
         };
     }
 }
 
 /**
- * Verifica la sesión actual (compatible con admin)
+ * Verifica la sesión actual (para clientes y admins)
  */
 export async function checkSession() {
     try {
@@ -125,17 +137,17 @@ export async function checkSession() {
         
         if (error || !session) return { success: false, user: null };
 
-        // Obtener perfil extendido
-        const { data: profile } = await supabase
-            .rpc('get_user_profile', {
+        // Verificar si es admin
+        const { data: adminData } = await supabase
+            .rpc('get_admin_data', {
                 p_user_id: session.user.id
             });
 
         return {
             success: true,
             user: session.user,
-            isAdmin: profile?.is_admin || false,
-            profileData: profile
+            isAdmin: adminData?.is_admin || false,
+            sede: adminData?.sede || null
         };
 
     } catch (error) {
@@ -145,36 +157,7 @@ export async function checkSession() {
 }
 
 /**
- * Verificación de promoción por cumpleaños (compatible con admin)
- */
-export async function checkBirthdayPromo(userId) {
-    try {
-        const { data: profile, error } = await supabase
-            .rpc('get_birthday_status', {
-                p_user_id: userId
-            });
-
-        if (error) throw error;
-
-        return {
-            success: true,
-            tienePromo: profile.tiene_promo,
-            esCumple: profile.es_cumple,
-            visitas: profile.visitas,
-            message: profile.mensaje
-        };
-
-    } catch (error) {
-        console.error('Error en checkBirthdayPromo:', error);
-        return {
-            success: false,
-            error: error.message
-        };
-    }
-}
-
-/**
- * Cierre de sesión
+ * Cierra la sesión del usuario
  */
 export async function logoutUser() {
     try {
@@ -191,56 +174,102 @@ export async function logoutUser() {
 }
 
 /**
- * Restablecer contraseña
+ * Funciones específicas para administradores
  */
-export async function resetPassword(email) {
-    try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/actualizar-password.html`
-        });
-
-        if (error) throw error;
-
-        return {
-            success: true,
-            message: 'Instrucciones enviadas a tu email'
-        };
-
-    } catch (error) {
-        console.error('Error en resetPassword:', error);
-        return {
-            success: false,
-            error: error.message.includes('user not found') 
-                ? 'Email no registrado' 
-                : 'Error al enviar instrucciones'
-        };
-    }
-}
-
-// Funciones específicas para administradores (deben llamarse desde contexto seguro)
 export const adminFunctions = {
     /**
-     * NOTA: Estas funciones deben usarse desde un entorno backend/seguro
-     * no directamente desde el cliente público
+     * Crea un nuevo administrador de sede
      */
-    getAllClients: async () => {
-        const { data, error } = await supabase
-            .from('clientes')
-            .select('*')
-            .order('created_at', { ascending: false });
+    createAdmin: async (adminData) => {
+        try {
+            // 1. Registrar usuario en Auth
+            const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+                email: adminData.email,
+                password: adminData.password,
+                email_confirm: true, // Auto-verificar
+                user_metadata: {
+                    full_name: adminData.nombre
+                }
+            });
 
-        if (error) throw error;
-        return data;
+            if (authError) throw authError;
+
+            // 2. Agregar a tabla admin_users
+            const { error: adminError } = await supabase
+                .from('admin_users')
+                .insert({
+                    user_id: authData.user.id,
+                    email: adminData.email,
+                    nombre: adminData.nombre,
+                    sede: adminData.sede,
+                    created_at: new Date().toISOString()
+                });
+
+            if (adminError) throw adminError;
+
+            return { success: true };
+
+        } catch (error) {
+            console.error('Error en createAdmin:', error);
+            return { success: false, error: error.message };
+        }
     },
 
-    updateClient: async (clientId, updates) => {
-        const { data, error } = await supabase
-            .from('clientes')
-            .update(updates)
-            .eq('id', clientId)
-            .select();
+    /**
+     * Obtiene todos los administradores (solo para super admins)
+     */
+    getAllAdmins: async () => {
+        try {
+            const { data, error } = await supabase
+                .from('admin_users')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        return data;
+            if (error) throw error;
+            return { success: true, data };
+
+        } catch (error) {
+            console.error('Error en getAllAdmins:', error);
+            return { success: false, error: error.message };
+        }
+    }
+};
+
+/**
+ * Funciones para la gestión de clientes
+ */
+export const clientFunctions = {
+    getClientProfile: async (userId) => {
+        try {
+            const { data, error } = await supabase
+                .from('clientes')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error) throw error;
+            return { success: true, data };
+
+        } catch (error) {
+            console.error('Error en getClientProfile:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    updateClient: async (userId, updates) => {
+        try {
+            const { data, error } = await supabase
+                .from('clientes')
+                .update(updates)
+                .eq('id', userId)
+                .select();
+
+            if (error) throw error;
+            return { success: true, data };
+
+        } catch (error) {
+            console.error('Error en updateClient:', error);
+            return { success: false, error: error.message };
+        }
     }
 };

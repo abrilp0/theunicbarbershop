@@ -3,114 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Admin - THE UNIC BARBER</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Admin Login - THE UNIC BARBER</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="assets/logo.png" type="image/png">
     <style>
         :root {
-            --primary: #000;
-            --secondary: #fff;
+            --primary: #1a1a1a;
+            --secondary: #ffffff;
             --accent: #d4af37;
+            --light-gray: #f8f9fa;
+            --dark-gray: #6c757d;
+            --error: #dc3545;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
         
         body {
             font-family: 'Poppins', sans-serif;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
+            padding: 20px;
         }
         
-        .login-container {
+        .admin-login {
             background: var(--secondary);
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             padding: 40px;
             width: 100%;
-            max-width: 400px;
-            text-align: center;
+            max-width: 480px;
+            position: relative;
+            overflow: hidden;
         }
         
-        .logo-admin {
+        .admin-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: var(--accent);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo-container {
             margin-bottom: 20px;
         }
         
-        .logo-admin img {
-            height: 60px;
+        .logo-container img {
+            height: 70px;
+            transition: transform 0.3s ease;
         }
         
-        h1 {
+        .logo-container:hover img {
+            transform: scale(1.05);
+        }
+        
+        .login-header h1 {
             color: var(--primary);
-            margin-bottom: 30px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .login-header p {
+            color: var(--dark-gray);
+            font-size: 0.95rem;
+        }
+        
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
         }
         
         .form-group {
-            margin-bottom: 20px;
-            text-align: left;
+            position: relative;
         }
         
-        label {
+        .form-group label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
-            color: #444;
+            font-weight: 500;
+            color: var(--primary);
+            font-size: 0.95rem;
         }
         
-        input {
+        .input-field {
+            position: relative;
+        }
+        
+        .input-field input {
             width: 100%;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
+            padding: 14px 16px 14px 48px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
             font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: var(--light-gray);
+        }
+        
+        .input-field input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--dark-gray);
+            font-size: 1.1rem;
         }
         
         .btn-login {
-            background: var(--primary);
+            background-color: var(--primary);
             color: var(--secondary);
             border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
+            padding: 14px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
             width: 100%;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
         }
         
         .btn-login:hover {
-            background: #333;
+            background-color: #2a2a2a;
+            transform: translateY(-2px);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
         }
         
         .error-message {
-            color: #e74c3c;
-            margin-top: 10px;
-            display: none; /* Se mostrará con JavaScript si hay un error */
+            color: var(--error);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background-color: rgba(220, 53, 69, 0.1);
+            border-radius: 6px;
+        }
+        
+        .footer-note {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--dark-gray);
+        }
+        
+        @media (max-width: 480px) {
+            .admin-login {
+                padding: 30px 20px;
+            }
+            
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo-admin">
-            <img src="assets/logo.png" alt="The Unic Barber">
+    <div class="admin-login">
+        <div class="login-header">
+            <div class="logo-container">
+                <img src="assets/logo.png" alt="The Unic Barber">
+            </div>
+            <h1>Panel Administrativo</h1>
+            <p>Ingresa tus credenciales para acceder al sistema</p>
         </div>
-        <h1>Panel Administrativo</h1>
         
-        <form id="login-form">
+        <form id="login-form" class="login-form">
             <div class="form-group">
                 <label for="email">Correo Electrónico</label>
-                <input type="email" id="email" required>
+                <div class="input-field">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" id="email" placeholder="admin@theunicbarber.com" required>
+                </div>
             </div>
             
             <div class="form-group">
                 <label for="password">Contraseña</label>
-                <input type="password" id="password" required>
+                <div class="input-field">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
             </div>
             
-            <button type="submit" class="btn-login">Iniciar Sesión</button>
             <div id="error-message" class="error-message"></div>
+            
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i>
+                Iniciar Sesión
+            </button>
         </form>
+        
+        <div class="footer-note">
+            <p>Solo personal autorizado. Acceso restringido.</p>
+        </div>
     </div>
 
     <script src="js/supabase.js" type="module"></script>
