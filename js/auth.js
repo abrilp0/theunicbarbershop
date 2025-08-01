@@ -2,84 +2,60 @@
 import { supabase } from './supabase.js';
 
 /**
- * Registra un nuevo usuario en Supabase Auth y crea un perfil de cliente.
- * @param {string} email - Email del usuario
- * @param {string} password - Contraseña del usuario
- * @param {object} userData - Datos adicionales del usuario
- * @returns {Promise<object>} - Resultado del registro
+ * Registra un nuevo usuario con verificación de duplicados e inserción segura
  */
 export async function registerUser(email, password, userData) {
     try {
         // Validación de campos obligatorios
-        if (!email || !password) {
-            throw new Error('Email y contraseña son obligatorios');
-        }
-        if (!userData?.nombre || !userData?.telefono || !userData?.fecha_nacimiento) {
-            throw new Error('Nombre, teléfono y fecha de nacimiento son obligatorios');
+        if (!email || !password || !userData?.nombre || !userData?.telefono || !userData?.fecha_nacimiento) {
+            throw new Error('Todos los campos son obligatorios');
         }
 
-        // Verificar si el email o teléfono ya existen
-        const { data: existingUsers, error: checkError } = await supabase
-            .from('clientes')
-            .select('email, telefono')
-            .or(`email.eq.${email},telefono.eq.${userData.telefono}`);
+        // 1. Verificar duplicados usando función stored
+        const { data: duplicateCheck, error: checkError } = await supabase
+            .rpc('check_duplicate_client', {
+                p_email: email,
+                p_telefono: userData.telefono
+            });
 
         if (checkError) throw checkError;
-
-        if (existingUsers?.length > 0) {
-            const emailExists = existingUsers.some(u => u.email === email);
-            const phoneExists = existingUsers.some(u => u.telefono === userData.telefono);
-
-            if (emailExists && phoneExists) {
-                throw new Error('El email y teléfono ya están registrados');
-            } else if (emailExists) {
-                throw new Error('Este email ya está registrado');
-            } else if (phoneExists) {
-                throw new Error('Este teléfono ya está registrado');
-            }
+        if (duplicateCheck.exists) {
+            throw new Error(duplicateCheck.message || 'El usuario ya existe');
         }
 
-        // Registrar usuario en Auth
+        // 2. Registrar en Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
                 data: {
-                    full_name: userData.nombre,
-                    phone: userData.telefono
+                    nombre: userData.nombre,
+                    telefono: userData.telefono
                 },
                 emailRedirectTo: `${window.location.origin}/login.html`
             }
         });
 
         if (authError) throw authError;
-        if (!authData.user) throw new Error('No se pudo crear el usuario');
+        if (!authData.user) throw new Error('Error al crear usuario');
 
-        // Crear perfil en tabla clientes
-        const { error: clientError } = await supabase
-            .from('clientes')
-            .insert([{
-                id: authData.user.id,
-                nombre: userData.nombre,
-                telefono: userData.telefono,
-                email: email,
-                fecha_nacimiento: userData.fecha_nacimiento,
-                sede: userData.sede || 'brasil',
-                visitas: 0,
-                bloqueado: false,
-                created_at: new Date().toISOString()
-            }]);
+        // 3. Crear perfil usando función stored (evita problemas RLS)
+        const { data: profileData, error: profileError } = await supabase
+            .rpc('create_client_profile', {
+                p_user_id: authData.user.id,
+                p_email: email,
+                p_nombre: userData.nombre,
+                p_telefono: userData.telefono,
+                p_fecha_nacimiento: userData.fecha_nacimiento,
+                p_sede: userData.sede || 'brasil'
+            });
 
-        if (clientError) {
-            // Revertir creación en Auth si falla en clientes
-            await supabase.auth.admin.deleteUser(authData.user.id);
-            throw new Error('Error al crear perfil de cliente');
-        }
+        if (profileError) throw new Error('Error al crear perfil: ' + profileError.message);
 
         return {
             success: true,
             user: authData.user,
-            message: 'Registro exitoso. Por favor verifica tu email.'
+            message: 'Registro exitoso. Verifica tu email para activar tu cuenta.'
         };
 
     } catch (error) {
@@ -93,45 +69,31 @@ export async function registerUser(email, password, userData) {
 }
 
 /**
- * Inicia sesión para un usuario existente.
- * @param {string} email - Email del usuario
- * @param {string} password - Contraseña del usuario
- * @returns {Promise<object>} - Resultado del login
+ * Inicio de sesión con redirección automática para admins
  */
 export async function loginUser(email, password) {
     try {
-        if (!email || !password) {
-            throw new Error('Email y contraseña son obligatorios');
-        }
-
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
         });
 
         if (error) {
+            // Manejo mejorado de errores
             if (error.message.includes('Email not confirmed')) {
-                throw new Error('Por favor verifica tu email antes de iniciar sesión');
-            }
-            if (error.message.includes('Invalid login credentials')) {
-                throw new Error('Credenciales inválidas');
+                throw new Error('Por favor verifica tu email primero');
             }
             throw error;
         }
 
-        // Verificar si el usuario existe en la tabla clientes
-        const { data: cliente, error: clienteError } = await supabase
-            .from('clientes')
-            .select('is_admin')
-            .eq('id', data.user.id)
-            .single();
+        // Verificar rol de admin
+        const { data: profile } = await supabase
+            .rpc('get_user_profile', {
+                p_user_id: data.user.id
+            });
 
-        if (clienteError && clienteError.code !== 'PGRST116') { // 116 = no rows found
-            console.error('Error al verificar cliente:', clienteError);
-        }
-
-        // Redirigir según el tipo de usuario
-        if (cliente?.is_admin) {
+        // Redirección automática
+        if (profile?.is_admin) {
             window.location.href = '/admin/dashboard.html';
         } else {
             window.location.href = '/agendar.html';
@@ -140,85 +102,66 @@ export async function loginUser(email, password) {
         return {
             success: true,
             user: data.user,
-            isAdmin: cliente?.is_admin || false
+            isAdmin: profile?.is_admin || false
         };
 
     } catch (error) {
         console.error('Error en loginUser:', error);
         return {
             success: false,
-            error: error.message,
-            code: error.code || 'LOGIN_ERROR'
+            error: error.message.includes('Invalid login credentials') 
+                ? 'Email o contraseña incorrectos' 
+                : error.message
         };
     }
 }
 
 /**
- * Verifica la sesión actual del usuario.
- * @returns {Promise<object>} - Estado de la sesión
+ * Verifica la sesión actual (compatible con admin)
  */
 export async function checkSession() {
     try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session) return { success: false, user: null };
 
-        if (error) throw error;
-        if (!data.session) return { success: false, user: null };
-
-        // Verificar si es admin
-        const { data: cliente } = await supabase
-            .from('clientes')
-            .select('is_admin')
-            .eq('id', data.session.user.id)
-            .single();
+        // Obtener perfil extendido
+        const { data: profile } = await supabase
+            .rpc('get_user_profile', {
+                p_user_id: session.user.id
+            });
 
         return {
             success: true,
-            user: data.session.user,
-            isAdmin: cliente?.is_admin || false
+            user: session.user,
+            isAdmin: profile?.is_admin || false,
+            profileData: profile
         };
 
     } catch (error) {
         console.error('Error en checkSession:', error);
-        return {
-            success: false,
-            error: error.message
-        };
+        return { success: false, error: error.message };
     }
 }
 
 /**
- * Verifica si el usuario tiene promoción de cumpleaños.
- * @param {string} userId - ID del usuario
- * @returns {Promise<object>} - Resultado de la verificación
+ * Verificación de promoción por cumpleaños (compatible con admin)
  */
 export async function checkBirthdayPromo(userId) {
     try {
-        if (!userId) throw new Error('ID de usuario requerido');
-
-        const { data: cliente, error } = await supabase
-            .from('clientes')
-            .select('visitas, fecha_nacimiento')
-            .eq('id', userId)
-            .single();
+        const { data: profile, error } = await supabase
+            .rpc('get_birthday_status', {
+                p_user_id: userId
+            });
 
         if (error) throw error;
-        if (!cliente) throw new Error('Cliente no encontrado');
-
-        const hoy = new Date();
-        const cumple = new Date(cliente.fecha_nacimiento);
-        const esCumple = hoy.getMonth() === cumple.getMonth() && hoy.getDate() === cumple.getDate();
-        const tienePromo = esCumple && cliente.visitas >= 4;
 
         return {
             success: true,
-            tienePromo,
-            esCumple,
-            visitas: cliente.visitas,
-            message: tienePromo 
-                ? '¡Feliz cumpleaños! Tienes un corte gratis.' 
-                : esCumple 
-                    ? 'Feliz cumpleaños (necesitas 4 visitas para la promoción)'
-                    : 'Hoy no es tu cumpleaños'
+            tienePromo: profile.tiene_promo,
+            esCumple: profile.es_cumple,
+            visitas: profile.visitas,
+            message: profile.mensaje
         };
 
     } catch (error) {
@@ -231,39 +174,7 @@ export async function checkBirthdayPromo(userId) {
 }
 
 /**
- * Envía email para restablecer contraseña.
- * @param {string} email - Email del usuario
- * @returns {Promise<object>} - Resultado de la operación
- */
-export async function resetPassword(email) {
-    try {
-        if (!email) throw new Error('Email es requerido');
-
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/actualizar-password.html`
-        });
-
-        if (error) throw error;
-
-        return {
-            success: true,
-            message: 'Email de recuperación enviado'
-        };
-
-    } catch (error) {
-        console.error('Error en resetPassword:', error);
-        return {
-            success: false,
-            error: error.message.includes('user not found') 
-                ? 'Email no registrado' 
-                : 'Error al enviar email'
-        };
-    }
-}
-
-/**
- * Cierra la sesión del usuario.
- * @returns {Promise<object>} - Resultado del logout
+ * Cierre de sesión
  */
 export async function logoutUser() {
     try {
@@ -275,9 +186,61 @@ export async function logoutUser() {
 
     } catch (error) {
         console.error('Error en logoutUser:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Restablecer contraseña
+ */
+export async function resetPassword(email) {
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/actualizar-password.html`
+        });
+
+        if (error) throw error;
+
+        return {
+            success: true,
+            message: 'Instrucciones enviadas a tu email'
+        };
+
+    } catch (error) {
+        console.error('Error en resetPassword:', error);
         return {
             success: false,
-            error: error.message
+            error: error.message.includes('user not found') 
+                ? 'Email no registrado' 
+                : 'Error al enviar instrucciones'
         };
     }
 }
+
+// Funciones específicas para administradores (deben llamarse desde contexto seguro)
+export const adminFunctions = {
+    /**
+     * NOTA: Estas funciones deben usarse desde un entorno backend/seguro
+     * no directamente desde el cliente público
+     */
+    getAllClients: async () => {
+        const { data, error } = await supabase
+            .from('clientes')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+    },
+
+    updateClient: async (clientId, updates) => {
+        const { data, error } = await supabase
+            .from('clientes')
+            .update(updates)
+            .eq('id', clientId)
+            .select();
+
+        if (error) throw error;
+        return data;
+    }
+};
