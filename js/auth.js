@@ -72,8 +72,30 @@ export async function registerUser(email, password, userData) {
     }
 }
 
+async function checkAdminStatus(userId) {
+    try {
+        const { data, error } = await supabase
+            .from('admin_users')
+            .select('sede')
+            .eq('user_id', userId)
+            .single();
+
+        if (error || !data) {
+            return { isAdmin: false };
+        }
+
+        return { 
+            isAdmin: true,
+            sede: data.sede 
+        };
+    } catch (error) {
+        console.error('Error checking admin status:', error);
+        return { isAdmin: false };
+    }
+}
+
 /**
- * Inicio de sesión con detección de sede para admins
+ * Inicio de sesión mejorado
  */
 export async function loginUser(email, password) {
     try {
@@ -90,23 +112,10 @@ export async function loginUser(email, password) {
             throw error;
         }
 
-        // 2. Verificar si es admin y obtener sede
-        const { data: adminData, error: adminError } = await supabase
-            .rpc('get_admin_data', {
-                p_user_id: data.user.id
-            });
+        // 2. Verificar si es admin
+        const { isAdmin, sede } = await checkAdminStatus(data.user.id);
 
-        // 3. Redirección según tipo de usuario
-        if (adminData?.is_admin) {
-            // Redirigir admin a dashboard de su sede
-            window.location.href = `/admin/${adminData.sede}/dashboard.html`;
-            return {
-                success: true,
-                user: data.user,
-                isAdmin: true,
-                sede: adminData.sede
-            };
-        } else {
+        if (!isAdmin) {
             // Redirigir cliente normal
             window.location.href = '/agendar.html';
             return {
@@ -115,6 +124,17 @@ export async function loginUser(email, password) {
                 isAdmin: false
             };
         }
+
+        // 3. Redirigir admin a dashboard de su sede
+        const dashboardPath = sede ? `/admin/${sede}/dashboard.html` : '/admin/dashboard.html';
+        window.location.href = dashboardPath;
+        
+        return {
+            success: true,
+            user: data.user,
+            isAdmin: true,
+            sede: sede
+        };
 
     } catch (error) {
         console.error('Error en loginUser:', error);
@@ -129,7 +149,7 @@ export async function loginUser(email, password) {
 }
 
 /**
- * Verifica la sesión actual (para clientes y admins)
+ * Verifica la sesión actual
  */
 export async function checkSession() {
     try {
@@ -138,16 +158,13 @@ export async function checkSession() {
         if (error || !session) return { success: false, user: null };
 
         // Verificar si es admin
-        const { data: adminData } = await supabase
-            .rpc('get_admin_data', {
-                p_user_id: session.user.id
-            });
+        const { isAdmin, sede } = await checkAdminStatus(session.user.id);
 
         return {
             success: true,
             user: session.user,
-            isAdmin: adminData?.is_admin || false,
-            sede: adminData?.sede || null
+            isAdmin: isAdmin,
+            sede: sede || null
         };
 
     } catch (error) {

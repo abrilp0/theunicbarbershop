@@ -84,13 +84,11 @@
             <li><a href="index.html#galeria">Galería</a></li>
             <li><a href="index.html#sedes">Sedes</a></li>
             <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
-            <li id="user-menu-container" style="display: none;">
-                <a href="#" id="auth-link">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="user-email"></span>
-                </a>
-                <div id="user-dropdown">
-                    <a href="#" id="logout-link">Cerrar sesión</a>
+            <li id="auth-link-container">
+                <a href="login.html" id="auth-link">Iniciar sesión</a>
+                <div id="user-dropdown" class="dropdown" style="display: none;">
+                    <span id="user-name"></span>
+                    <a href="#" id="cerrarSesion">Cerrar sesión</a>
                 </div>
             </li>
         </ul>

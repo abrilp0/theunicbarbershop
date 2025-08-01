@@ -1,18 +1,93 @@
 import { supabase } from './supabase.js';
-// Manejo del menú hamburguesa y sesión de usuario
-document.addEventListener('DOMContentLoaded', function() {
-    // Menú hamburguesa
+import { checkSession } from './auth.js';
+
+// Manejo del menú y sesión de usuario
+document.addEventListener('DOMContentLoaded', async function() {
+    // 1. Configuración del menú hamburguesa
+    setupMobileMenu();
+    
+    // 2. Configuración de la sesión de usuario
+    await setupUserSession();
+    
+    // 3. Configuración del cierre de sesión
+    setupLogout();
+});
+
+/**
+ * Configura el menú hamburguesa para móviles
+ */
+function setupMobileMenu() {
     const menuToggle = document.querySelector('.menu-toggle');
     const navList = document.querySelector('.nav-list');
+    const navLinks = document.querySelectorAll('.nav-list a');
     
     if (menuToggle && navList) {
+        // Toggle del menú
         menuToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
             navList.classList.toggle('active');
         });
+        
+        // Cerrar menú al hacer clic en enlaces (para móviles)
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                menuToggle.classList.remove('active');
+                navList.classList.remove('active');
+            });
+        });
     }
+}
 
-    // Cerrar sesión
-    const logoutLink = document.getElementById('logout-link');
+/**
+ * Configura la visualización de la sesión del usuario
+ */
+async function setupUserSession() {
+    const authContainer = document.getElementById('auth-link-container');
+    const userDropdown = document.getElementById('user-dropdown');
+    const userNameSpan = document.getElementById('user-name');
+    const authLink = document.getElementById('auth-link');
+    
+    // Verificar sesión actual
+    const { success, user, isAdmin } = await checkSession();
+    
+    if (success && user) {
+        // Usuario autenticado
+        if (authContainer) authContainer.style.display = 'block';
+        if (authLink) {
+            authLink.textContent = user.email.split('@')[0]; // Mostrar nombre corto
+            authLink.href = '#';
+        }
+        if (userNameSpan) {
+            userNameSpan.textContent = user.email;
+        }
+        if (userDropdown) {
+            userDropdown.style.display = 'none';
+            
+            // Mostrar/ocultar dropdown
+            authLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+            });
+        }
+    } else {
+        // Usuario no autenticado
+        if (authContainer) authContainer.style.display = 'block';
+        if (authLink) {
+            authLink.textContent = 'Iniciar sesión';
+            authLink.href = 'login.html';
+        }
+        if (userDropdown) {
+            userDropdown.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Configura el cierre de sesión
+ */
+function setupLogout() {
+    const logoutLink = document.getElementById('cerrarSesion');
+    
     if (logoutLink) {
         logoutLink.addEventListener('click', async function(e) {
             e.preventDefault();
@@ -22,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+}
 document.addEventListener('DOMContentLoaded', async function () {
     // Elementos del DOM
     const locationSelect = document.getElementById('location');

@@ -1328,3 +1328,71 @@ footer {
 .login-container .login-links a:hover {
     color: var(--accent-color);
 }
+/* Estilos del menú móvil */
+.navbar {
+    position: relative;
+}
+
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 21px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.menu-toggle span {
+    display: block;
+    height: 3px;
+    width: 100%;
+    background-color: var(--primary);
+    transition: all 0.3s ease;
+}
+
+.nav-list {
+    display: flex;
+    transition: all 0.3s ease;
+}
+
+/* Estilos para móvil */
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: flex;
+    }
+    
+    .nav-list {
+        position: fixed;
+        top: 70px;
+        left: -100%;
+        width: 80%;
+        height: calc(100vh - 70px);
+        background-color: var(--secondary);
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 0;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    }
+    
+    .nav-list.active {
+        left: 0;
+    }
+    
+    .nav-list li {
+        margin: 15px 0;
+    }
+    
+    #user-dropdown {
+        position: static;
+        box-shadow: none;
+        display: none;
+        width: 100%;
+        text-align: center;
+    }
+    
+    #auth-link:hover + #user-dropdown,
+    #user-dropdown:hover {
+        display: block;
+    }
+}
