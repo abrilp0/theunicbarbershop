@@ -6,79 +6,85 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMessageElement = document.getElementById('error-message');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
+    const submitBtn = document.querySelector('#login-form button[type="submit"]');
 
-    // Verificar inmediatamente si el usuario es admin
-    checkAdminSession();
+    // Verificar si ya existe una sesión de administrador al cargar la página.
+    checkExistingAdminSession();
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (event) => {
             event.preventDefault();
+            errorMessageElement.style.display = 'none';
+
+            // Deshabilitar el botón para evitar múltiples envíos
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Verificando...';
 
             const email = emailInput.value.trim();
             const password = passwordInput.value;
 
-            // Validación básica
-            if (!email || !password) {
-                showError('Por favor ingresa tu email y contraseña');
-                return;
-            }
-
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password,
+                // 1. Intentar iniciar sesión con Supabase Auth
+                const { data, error: authError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
                 });
 
-                if (error) {
-                    showError('Email o contraseña incorrectos');
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                    return;
+                if (authError) {
+                    throw authError;
                 }
 
-                // Verificar si el usuario es admin
-                const { data: { user } } = await supabase.auth.getUser();
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('is_admin')
-                    .eq('id', user.id)
-                    .single();
+                // Si el inicio de sesión es exitoso, verificar si es un administrador usando la función RPC
+                const { data: adminData, error: adminError } = await supabase.rpc('check_admin_status', {
+                    p_user_id: data.user.id
+                });
 
-                if (userError || !userData?.is_admin) {
+                // Si no hay datos de administrador o hay un error, no es un admin.
+                if (adminError || !adminData || adminData.length === 0) {
                     await supabase.auth.signOut();
-                    showError('No tienes permisos de administrador');
-                    return;
+                    throw new Error('No tienes permisos de administrador');
                 }
 
-                // Redirigir al panel de admin
-                window.location.href = 'admin.html';
+                // Si es un admin, obtener la sede y redirigir
+                const sede = adminData[0].sede;
+                if (!sede) {
+                    await supabase.auth.signOut();
+                    throw new Error('Administrador sin sede asignada');
+                }
 
-            } catch (err) {
-                showError('Error al iniciar sesión. Intenta nuevamente.');
-                console.error('Error inesperado:', err);
+                // Redirigir al panel de admin con el parámetro de la sede
+                window.location.replace(`admin.html?sede=${sede}`);
+
+            } catch (error) {
+                console.error('Error en login:', error);
+                showError(getErrorMessage(error));
+            } finally {
+                // Volver a habilitar el botón de inicio de sesión
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Iniciar sesión';
             }
         });
     }
 
-    async function checkAdminSession() {
+    async function checkExistingAdminSession() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                // Verificar si es admin
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('is_admin')
-                    .eq('id', user.id)
-                    .single();
+            if (!user) {
+                return;
+            }
+            
+            const { data: adminData, error: adminError } = await supabase.rpc('check_admin_status', {
+                p_user_id: user.id
+            });
 
-                if (!userError && userData?.is_admin) {
-                    window.location.href = 'admin.html';
-                } else {
-                    await supabase.auth.signOut();
+            if (!adminError && adminData && adminData.length > 0) {
+                const sede = adminData[0].sede;
+                if (sede) {
+                    window.location.replace(`admin.html?sede=${sede}`);
                 }
             }
-        } catch (e) {
-            console.error("Error al verificar sesión:", e);
+        } catch (error) {
+            console.error('Error al verificar sesión existente:', error);
         }
     }
 
@@ -87,10 +93,19 @@ document.addEventListener('DOMContentLoaded', () => {
             errorMessageElement.textContent = message;
             errorMessageElement.style.display = 'block';
             
-            // Ocultar mensaje después de 5 segundos
             setTimeout(() => {
                 errorMessageElement.style.display = 'none';
             }, 5000);
         }
+    }
+
+    function getErrorMessage(error) {
+        if (error.message.includes('Invalid login credentials')) {
+            return 'Email o contraseña incorrectos';
+        }
+        if (error.message.includes('Email not confirmed')) {
+            return 'Por favor verifica tu email primero';
+        }
+        return error.message || 'Error al iniciar sesión';
     }
 });

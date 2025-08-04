@@ -11,8 +11,6 @@
 <body>
         <script type="module">
         import { checkAuth, logoutUser } from './js/auth.js';
-        import { setupAdminPage } from './js/admin.js';
-        
         async function checkAdminAccess() {
             const { isAuthenticated, isAdmin, error } = await checkAuth();
             const params = new URLSearchParams(window.location.search);
@@ -24,8 +22,6 @@
                 window.location.href = redirectUrl;
             } else {
                 document.body.style.display = 'block';
-                // Si es admin, inicia el script de la página
-                setupAdminPage();
             }
         }
         
@@ -152,8 +148,8 @@
         </div>
     </div>
 
-    <audio id="notificationSound" src="assets/notificacionSound.mp3" preload="auto"></audio>
-    <audio id="birthdaySound" src="assets/happy-birthday.mp3" preload="auto"></audio>
+    <audio id="notificationSound" src="/assets/notificacionSound.mp3" preload="auto"></audio>
+    <audio id="birthdaySound" src="/assets/happy-birthday.mp3" preload="auto"></audio>
 
     <div id="cumpleanosBookingModal" class="modal">
         <div class="modal-content">
@@ -182,6 +178,6 @@
     </div>
 
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-    <script type="module" src="./js/admin.js"></script>
+    <script type="module" src="/js/admin.js"></script>
 </body>
 </html>

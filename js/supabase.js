@@ -1,82 +1,88 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+// js/supabase.js
+import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
 
-// 1. Configuración de Supabase
-const SUPABASE_URL = 'https://dqusvawklxmxycyruwrj.supabase.co';
-// ¡IMPORTANTE! Asegúrate de que esta sea tu "anon public key"
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXN2YXdrbHhteHljeXJ1d3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5MzI4NTQsImV4cCI6MjA2NzUwODg1NH0.4U_1Tx6w_Vvj-FcggAEh-LFkGmxqjcAY5CLNTcC4SZ0';
+const supabaseUrl = 'https://dqusvawklxmxycyruwrj.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXN2YXdrbHhteHljeXJ1d3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5MzI4NTQsImV4cCI6MjA2NzUwODg1NH0.4U_1Tx6w_Vvj-FcggAEh-LFkGmxqjcAY5CLNTcC4SZ0'; // Reemplaza con tu clave pública
 
-// Se crea la instancia de Supabase. NO se exporta aquí individualmente.
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 2. Manejar sesión persistente
-supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_OUT') {
-        // Eliminar la sesión del almacenamiento local cuando el usuario cierra sesión
-        localStorage.removeItem('sb-auth-token');
-    } else if (session) {
-        // Guardar la sesión en el almacenamiento local
-        localStorage.setItem('sb-auth-token', JSON.stringify(session));
-    }
+// Función para verificar si el usuario actual es admin
+export async function isAdmin() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+
+        const { data: adminCheck } = await supabase.rpc('check_admin_status', {
+  p_user_id: user.id
 });
 
-// 3. Intentar recuperar sesión al cargar
-const savedSession = localStorage.getItem('sb-auth-token');
-if (savedSession) {
-    try {
-        const parsedSession = JSON.parse(savedSession);
-        supabase.auth.setSession(parsedSession);
-    } catch (e) {
-        console.error("Error al parsear la sesión guardada:", e);
-        localStorage.removeItem('sb-auth-token'); // Limpiar sesión corrupta
-    }
-}
 
-// 4. Obtener todos los barberos
-async function getBarberos() {
-    const { data, error } = await supabase
-        .from('barberos')
-        .select('*')
-        .order('nombre', { ascending: true });
-
-    if (error) {
-        console.error("Error obteniendo barberos:", error);
-        throw error;
-    }
-
-    return data;
-}
-
-// 5. Obtener barbero por ID
-async function getBarberoById(id) {
-    const { data, error } = await supabase
-        .from('barberos')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-    if (error) {
-        console.error("Error obteniendo barbero por ID:", error);
-        throw error;
-    }
-
-    return data;
-}
-
-// Nueva función para verificar admin
-async function verifyAdmin(userId, email) {
-    const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', userId)  // Buscar por user_id
-        .eq('email', email)    // Y también por email para doble verificación
-        .single();
-
-    if (error || !data) {
-        console.error("Error verificando admin:", error);
+        return !error && data;
+    } catch (error) {
+        console.error('Error verificando admin:', error);
         return false;
     }
-
-    return data; // Retornamos todos los datos del admin
 }
 
-export { supabase, getBarberos, getBarberoById, verifyAdmin };
+// Función para obtener la sede del admin
+export async function getAdminSede() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        const { data: adminCheck } = await supabase.rpc('check_admin_status', {
+  p_user_id: user.id
+});
+
+
+        return error ? null : data.sede;
+    } catch (error) {
+        console.error('Error obteniendo sede:', error);
+        return null;
+    }
+}
+
+// Función para verificar cumpleaños
+export async function verificarCumpleanos() {
+    try {
+        const sede = await getAdminSede();
+        if (!sede) return [];
+
+        const hoy = new Date();
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoy.getDate()).padStart(2, '0');
+
+        const { data, error } = await supabase
+            .from('clientes')
+            .select('nombre, telefono, email, fecha_nacimiento')
+            .eq('sede', sede)
+            .like('fecha_nacimiento', `%-${mes}-${dia}`);
+
+        return error ? [] : data;
+    } catch (error) {
+        console.error('Error verificando cumpleaños:', error);
+        return [];
+    }
+}
+
+// Función para exportar a Excel
+export function exportarAExcel(datos, nombreArchivo) {
+    try {
+        // Crear workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Convertir datos a worksheet
+        const ws = XLSX.utils.json_to_sheet(datos);
+        
+        // Agregar worksheet al workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Datos");
+        
+        // Guardar archivo
+        XLSX.writeFile(wb, `${nombreArchivo}.xlsx`);
+        
+        return true;
+    } catch (error) {
+        console.error('Error exportando a Excel:', error);
+        return false;
+    }
+}

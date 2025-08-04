@@ -1,3 +1,4 @@
+
 // js/auth.js
 import { supabase } from './supabase.js';
 
@@ -48,8 +49,6 @@ export async function registerUser(email, password, userData) {
                 nombre: userData.nombre,
                 telefono: userData.telefono,
                 fecha_nacimiento: userData.fecha_nacimiento,
-                sede: userData.sede || 'brasil',
-                visitas: 0,
                 bloqueado: false,
                 created_at: new Date().toISOString()
             });

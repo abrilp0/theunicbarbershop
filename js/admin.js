@@ -34,6 +34,18 @@ let currentCumpleanosCliente = null; // Para almacenar el cliente seleccionado p
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
+    // 🔊 Desbloquear reproducción automática de sonidos en navegadores
+    document.body.addEventListener('click', () => {
+        try {
+            notificationSound.play().then(() => {
+                notificationSound.pause();
+                notificationSound.currentTime = 0;
+                console.log('🔊 Autoplay desbloqueado para notificationSound');
+            });
+        } catch (e) {
+            console.warn('⚠️ No se pudo desbloquear autoplay:', e);
+        }
+    }, { once: true });    
     await checkSession();
     // Llamar setupRealTimeUpdates después de que currentSede esté definido por checkSession
     setupRealTimeUpdates(); 
@@ -894,23 +906,30 @@ function setupRealTimeUpdates() {
         })
         .subscribe();
     
-    // Suscribirse específicamente a nuevas citas (INSERT) para notificaciones y sonido
-    supabase.channel('new_citas_notification') // Usar un nombre de canal distinto si se desea
-        .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'citas',
-            filter: `sede=eq.${currentSede}` // Filtrar para que solo suene si la cita es de la sede del admin
-        }, payload => {
-            console.log('¡Nueva cita INSERTADA detectada!', payload);
-            if (payload.new && payload.new.sede === currentSede) { // Doble verificación para mayor seguridad
-                // CORRECCIÓN: Descomentar la línea y añadir manejo de errores para el play()
-                if (notificationSound) { // Asegurarse de que el elemento existe antes de intentar reproducir
-                    notificationSound.play().catch(e => console.error("Error al reproducir el sonido:", e)); 
-                }
-                showNotification(`¡Nueva cita agendada para ${payload.new.fecha} a las ${payload.new.hora}!`, 'success'); // Aquí se muestra la notificación
-                loadCitas(); // Recargar la lista de citas para mostrar la nueva
+// Suscripción a cambios en citas
+supabase.channel('new_citas_notification')
+    .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'citas',
+        filter: `sede=eq.${currentSede}`
+    }, payload => {
+        console.log('¡Nueva cita INSERTADA detectada!', payload);
+
+        if (payload.new && payload.new.sede === currentSede) {
+            if (notificationSound) {
+                notificationSound.play().then(() => {
+                    console.log('Sonido reproducido correctamente');
+                }).catch(e => {
+                    console.error("Error al reproducir el sonido:", e);
+                });
+            } else {
+                console.warn('No se encontró el elemento de sonido notificationSound');
             }
-        })
-        .subscribe();
+
+            showNotification(`¡Nueva cita agendada para ${payload.new.fecha} a las ${payload.new.hora}!`, 'success');
+            loadCitas();
+        }
+    })
+    .subscribe();
 }

@@ -332,6 +332,60 @@
                 background: transparent;
             }
         }
+        .forgot-password {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .forgot-password a {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* Modal para recuperación */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+        .modal-content h3 {
+            margin-bottom: 15px;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            font-size: 24px;
+            color: #aaa;
+            cursor: pointer;
+        }
+        .close-button:hover {
+            color: #000;
+        }
+
     </style>
 </head>
 <body>
@@ -386,10 +440,27 @@
                     <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                 </button>
             </form>
+                <!-- Enlace para recuperar contraseña -->
+                <div class="forgot-password">
+                    <a href="#" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <!-- MODAL bonito para recuperar contraseña -->
+                <div id="passwordResetModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-button" id="closeResetModal">&times;</span>
+                        <h3>Recuperar contraseña</h3>
+                        <p>Ingresa tu correo electrónico para recibir un enlace de recuperación.</p>
+                        <input type="email" id="resetEmailInput" placeholder="ejemplo@correo.com" required>
+                        <button id="sendResetEmailBtn" class="btn-login">Enviar enlace</button>
+                        <p id="resetMessage" class="message" style="margin-top: 10px;"></p>
+                    </div>
+                </div>
             
             <div class="login-links">
                 <a href="registro.html">¿No tienes cuenta? Regístrate aquí</a>
             </div>
+            
         </div>
     </div>
 
@@ -410,6 +481,56 @@
             localStorage.setItem('redirectAfterAuth', redirect);
         }
     </script>
-    
+    <script type="module">
+    import { supabase } from './js/supabase.js';
+
+    // Mostrar el modal
+    const forgotLink = document.getElementById('forgot-password-link');
+    const modal = document.getElementById('passwordResetModal');
+    const closeBtn = document.getElementById('closeResetModal');
+    const sendBtn = document.getElementById('sendResetEmailBtn');
+    const resetInput = document.getElementById('resetEmailInput');
+    const resetMsg = document.getElementById('resetMessage');
+
+    forgotLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        resetInput.value = '';
+        resetMsg.textContent = '';
+        modal.style.display = 'block';
+    });
+
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    sendBtn.addEventListener('click', async () => {
+        const email = resetInput.value.trim();
+        resetMsg.textContent = '';
+        if (!email) {
+            resetMsg.textContent = 'Ingresa un correo válido';
+            resetMsg.className = 'message error';
+            return;
+        }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/actualizar-contrasena.html`
+        });
+
+        if (error) {
+            resetMsg.textContent = 'Error: ' + error.message;
+            resetMsg.className = 'message error';
+        } else {
+            resetMsg.textContent = '📬 Enlace enviado. Revisa tu correo.';
+            resetMsg.className = 'message success';
+        }
+    });
+</script>
+
 </body>
 </html>
