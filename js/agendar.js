@@ -509,13 +509,17 @@ async function handleBookingSubmit(event) {
         const whatsappMessage = `¡Hola, ${barberoName}! Soy ${nameInput.value}. He agendado una cita contigo en la sede ${sedeName} para el día ${selectedDate} a las ${selectedTime}. El servicio es "${serviceSelect.value}". ¡Nos vemos!`;
         const whatsappUrl = `https://wa.me/+56${barberoPhone}?text=${encodeURIComponent(whatsappMessage)}`;
 
-        setTimeout(() => {
-            window.open(whatsappUrl, '_blank');
-            form.reset();
-            loader.style.display = 'none';
-            setupUserSession();
-            updateBarberosSelect();
-        }, 2000);
+// Redirigir inmediatamente (esto evita bloqueo en móviles)
+window.location.href = whatsappUrl;
+
+// Luego limpiar el formulario silenciosamente
+setTimeout(() => {
+    form.reset();
+    loader.style.display = 'none';
+    setupUserSession();
+    updateBarberosSelect();
+}, 3000);
+
 
     } catch (error) {
         console.error('Error en el agendamiento:', error);
