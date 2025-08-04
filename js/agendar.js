@@ -404,6 +404,15 @@ function generarHorasDisponiblesDesde(startHour, startMinute) {
 async function handleBookingSubmit(event) {
     event.preventDefault();
 
+    // Validar que la fecha seleccionada sea el día siguiente hábil
+    const selectedDate = fechaInput.value; // "YYYY-MM-DD" string
+    const fixedBookingDate = getNextValidBookingDate(); // misma función que usas para limitar el input
+
+    if (selectedDate !== fixedBookingDate) {
+        mostrarMensaje(`Solo puedes agendar para el día: ${fixedBookingDate}`, 'error');
+        return; // detenemos aquí el submit
+    }
+
     if (!isAuthenticated) {
         mostrarMensaje('Debes iniciar sesión para agendar una cita.', 'error');
         setTimeout(() => {
