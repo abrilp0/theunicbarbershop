@@ -508,9 +508,16 @@ async function handleBookingSubmit(event) {
         // Usar el nombre del cliente ingresado para el mensaje
         const whatsappMessage = `¡Hola, ${barberoName}! Soy ${nameInput.value}. He agendado una cita contigo en la sede ${sedeName} para el día ${selectedDate} a las ${selectedTime}. El servicio es "${serviceSelect.value}". ¡Nos vemos!`;
         const whatsappUrl = `https://wa.me/+56${barberoPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+        // Crear un formulario oculto para redirigir sin bloqueos (compatible con iOS/Safari)
+        const formRedirect = document.createElement('form');
+        formRedirect.method = 'GET';
+        formRedirect.action = whatsappUrl;
+        formRedirect.style.display = 'none';
+        document.body.appendChild(formRedirect);
+        formRedirect.submit();
 
 // Redirigir inmediatamente (esto evita bloqueo en móviles)
-window.location.href = whatsappUrl;
+//window.location.href = whatsappUrl;
 
 // Luego limpiar el formulario silenciosamente
 setTimeout(() => {
