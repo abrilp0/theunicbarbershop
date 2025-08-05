@@ -28,47 +28,41 @@ let isAuthenticated = false;
 let barberosDisponibles = []; // Para almacenar los barberos cargados
 
 document.addEventListener('DOMContentLoaded', async function () {
-    // 1. Configuración del menú hamburguesa
     setupMobileMenu();
-
-    // 2. Verificar la sesión del cliente al cargar la página
     await setupUserSession();
-
-    // 3. Configurar el cierre de sesión
     setupLogout();
-
-    // 4. Configurar los eventos del formulario
     setupFormEvents();
 
-    // 5. Lógica para fijar la fecha al día siguiente hábil (usando Flatpickr)
-    const fixedBookingDate = getNextValidBookingDate(); // "YYYY-MM-DD"
+    const fixedBookingDate = getNextValidBookingDate();
 
     flatpickr("#fecha", {
         defaultDate: fixedBookingDate,
         minDate: fixedBookingDate,
         maxDate: fixedBookingDate,
         dateFormat: "Y-m-d",
-        disableMobile: true // fuerza calendario Flatpickr incluso en móviles
+        disableMobile: true,
+        disable: [
+            function(date) {
+                return date.getDay() === 0 || date.getDay() === 6;
+            }
+        ],
+        locale: {
+            firstDayOfWeek: 1
+        }
     });
 
-    // 6. Cargar todos los barberos una sola vez
     await loadAllBarberos();
-    
-    // 7. Llenar los select iniciales
     await updateBarberosSelect();
     await verificarDisponibilidad();
 });
 
-/**
- * Configura el menú hamburguesa para móviles.
- */
 function setupMobileMenu() {
     if (mobileMenuToggle && navList) {
         mobileMenuToggle.addEventListener('click', function() {
             this.classList.toggle('active');
             navList.classList.toggle('active');
         });
-        
+
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
                 mobileMenuToggle.classList.remove('active');
@@ -78,14 +72,9 @@ function setupMobileMenu() {
     }
 }
 
-/**
- * Configura la visualización de la sesión del usuario.
- * Si no hay sesión, redirige al usuario a la página de login.
- * Si hay sesión, carga los datos del cliente.
- */
 async function setupUserSession() {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
+
     if (sessionError || !session) {
         console.warn('No hay sesión activa para el cliente. Redirigiendo a login.html');
         if (window.location.pathname !== '/login.html') {
@@ -131,9 +120,8 @@ async function setupUserSession() {
                     email: session.user.email,
                     telefono: '',
                 });
-            
             if (insertError) throw insertError;
-            
+
             const { data: newCliente, error: newClienteError } = await supabase
                 .from('clientes')
                 .select('*')
@@ -164,28 +152,17 @@ async function setupUserSession() {
     }
 }
 
-/**
- * Función para obtener la próxima fecha válida para agendar (excluyendo Sábados y Domingos).
- */
 function getNextValidBookingDate() {
     let nextDay = new Date();
     nextDay.setDate(nextDay.getDate() + 1);
-    
+
     const dayOfWeek = nextDay.getDay();
+    if (dayOfWeek === 0) nextDay.setDate(nextDay.getDate() + 1);
+    else if (dayOfWeek === 6) nextDay.setDate(nextDay.getDate() + 2);
 
-    if (dayOfWeek === 0) { // Domingo
-        nextDay.setDate(nextDay.getDate() + 1);
-    } else if (dayOfWeek === 6) { // Sábado
-        nextDay.setDate(nextDay.getDate() + 2);
-    }
-
-    return nextDay.toISOString().split('T')[0]; // YYYY-MM-DD
+    return nextDay.toISOString().split('T')[0];
 }
 
-
-/**
- * Configura el cierre de sesión.
- */
 function setupLogout() {
     if (cerrarSesionBtn) {
         cerrarSesionBtn.addEventListener('click', async (e) => {
