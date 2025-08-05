@@ -40,11 +40,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     // 4. Configurar los eventos del formulario
     setupFormEvents();
 
-    // 5. Lógica para fijar la fecha al día siguiente hábil
-    const fixedBookingDate = getNextValidBookingDate();
-    fechaInput.min = fixedBookingDate;
-    fechaInput.max = fixedBookingDate;
-    fechaInput.value = fixedBookingDate;
+    // 5. Lógica para fijar la fecha al día siguiente hábil (usando Flatpickr)
+    const fixedBookingDate = getNextValidBookingDate(); // "YYYY-MM-DD"
+
+    flatpickr("#fecha", {
+        defaultDate: fixedBookingDate,
+        minDate: fixedBookingDate,
+        maxDate: fixedBookingDate,
+        dateFormat: "Y-m-d",
+        disableMobile: true // fuerza calendario Flatpickr incluso en móviles
+    });
 
     // 6. Cargar todos los barberos una sola vez
     await loadAllBarberos();
@@ -79,14 +84,12 @@ function setupMobileMenu() {
  * Si hay sesión, carga los datos del cliente.
  */
 async function setupUserSession() {
-    // Reemplazamos checkAuth por getSession para evitar dependencias circulares
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError || !session) {
         console.warn('No hay sesión activa para el cliente. Redirigiendo a login.html');
-        // Redirección robusta para evitar bucles
         if (window.location.pathname !== '/login.html') {
-             window.location.replace('login.html');
+            window.location.replace('login.html');
         }
         return;
     }
@@ -98,14 +101,12 @@ async function setupUserSession() {
     userDropdown.style.display = 'flex';
     userNameSpan.textContent = session.user.user_metadata?.full_name || session.user.email;
 
-    // Lógica para mostrar/ocultar el dropdown al hacer clic en el nombre
     userNameSpan.addEventListener('click', (e) => {
         e.stopPropagation();
         const dropdownContent = cerrarSesionBtn.parentElement;
         dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
     });
 
-    // Cerrar el dropdown si se hace clic fuera de él
     document.addEventListener('click', (e) => {
         const dropdownContent = cerrarSesionBtn.parentElement;
         if (!userDropdown.contains(e.target)) {
@@ -162,6 +163,25 @@ async function setupUserSession() {
         mostrarMensaje(`Error al cargar datos de usuario: ${e.message}`, 'error');
     }
 }
+
+/**
+ * Función para obtener la próxima fecha válida para agendar (excluyendo Sábados y Domingos).
+ */
+function getNextValidBookingDate() {
+    let nextDay = new Date();
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    const dayOfWeek = nextDay.getDay();
+
+    if (dayOfWeek === 0) { // Domingo
+        nextDay.setDate(nextDay.getDate() + 1);
+    } else if (dayOfWeek === 6) { // Sábado
+        nextDay.setDate(nextDay.getDate() + 2);
+    }
+
+    return nextDay.toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
 
 /**
  * Configura el cierre de sesión.
@@ -247,23 +267,6 @@ async function handleServiceChange() {
 
 
 
-/**
- * Función para obtener la próxima fecha válida para agendar (excluyendo Sábados y Domingos).
- */
-function getNextValidBookingDate() {
-    let nextDay = new Date();
-    nextDay.setDate(nextDay.getDate() + 1);
-    
-    let dayOfWeek = nextDay.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
-
-    if (dayOfWeek === 0) {
-        nextDay.setDate(nextDay.getDate() + 1);
-    } else if (dayOfWeek === 6) {
-        nextDay.setDate(nextDay.getDate() + 2);
-    }
-    
-    return nextDay.toISOString().split('T')[0];
-}
 
 /**
  * Actualiza el select de barberos.
