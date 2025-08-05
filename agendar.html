@@ -86,8 +86,18 @@
             <li><a href="index.html#sedes">Sedes</a></li>
             <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
             <li id="auth-link-container">
+                <!-- Botón de hamburguesa solo en móvil -->
+                <button id="mobile-menu-toggle" class="mobile-only">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Enlace de inicio de sesión (visible cuando no hay sesión) -->
                 <a href="login.html" id="auth-link">Iniciar sesión</a>
-                <div id="user-dropdown" class="dropdown" style="display: none;">
+                
+                <!-- Menú de usuario (visible cuando hay sesión) -->
+                <div id="user-dropdown" class="dropdown">
                     <span id="user-name"></span>
                     <a href="#" id="cerrarSesion">Cerrar sesión</a>
                 </div>

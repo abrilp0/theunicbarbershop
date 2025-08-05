@@ -22,6 +22,7 @@ const mobileMenuToggle = document.getElementById('mobile-menu');
 const navList = document.querySelector('.nav-list');
 const navLinks = document.querySelectorAll('.nav-list a');
 const bookingBtn = form.querySelector('button[type="submit"]');
+const userMenuToggle = document.getElementById('user-menu-toggle'); // Nuevo elemento
 
 let currentUserId = null;
 let isAuthenticated = false;
@@ -29,6 +30,7 @@ let barberosDisponibles = []; // Para almacenar los barberos cargados
 
 document.addEventListener('DOMContentLoaded', async function () {
     setupMobileMenu();
+    setupUserMenu(); // Nueva función para el menú de usuario
     await setupUserSession();
     setupLogout();
     setupFormEvents();
@@ -61,6 +63,11 @@ function setupMobileMenu() {
         mobileMenuToggle.addEventListener('click', function() {
             this.classList.toggle('active');
             navList.classList.toggle('active');
+            
+            // Cerrar el menú de usuario si está abierto
+            if (userDropdown.classList.contains('mobile-visible')) {
+                userDropdown.classList.remove('mobile-visible');
+            }
         });
 
         navLinks.forEach(link => {
@@ -70,6 +77,40 @@ function setupMobileMenu() {
             });
         });
     }
+}
+
+// Nueva función para manejar el menú de usuario
+function setupUserMenu() {
+    // Crear el botón de menú de usuario si no existe
+    if (!userMenuToggle && userDropdown) {
+        const menuToggle = document.createElement('button');
+        menuToggle.id = 'user-menu-toggle';
+        menuToggle.className = 'user-menu-toggle mobile-only';
+        menuToggle.innerHTML = `
+            <span></span>
+            <span></span>
+            <span></span>
+        `;
+        userNameSpan.parentNode.insertBefore(menuToggle, userNameSpan.nextSibling);
+        
+        menuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('mobile-visible');
+            
+            // Cerrar el menú principal si está abierto
+            if (navList.classList.contains('active')) {
+                mobileMenuToggle.classList.remove('active');
+                navList.classList.remove('active');
+            }
+        });
+    }
+
+    // Cerrar menús al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!userDropdown.contains(e.target) && !userMenuToggle?.contains(e.target)) {
+            userDropdown.classList.remove('mobile-visible');
+        }
+    });
 }
 
 async function setupUserSession() {
