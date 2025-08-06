@@ -1066,130 +1066,84 @@ footer {
     .promo-dates {
         font-style: italic;
     }
-/* ==================== MENÚ USUARIO ADAPTATIVO ==================== */
-#user-dropdown {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background-color: var(--secondary-color);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    min-width: 180px;
-    z-index: 1000;
-    display: none;
-}
-
-#user-dropdown a {
-    display: block;
-    padding: 0.75rem 1rem;
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: all 0.3s;
-}
-
-#user-dropdown a:hover {
-    background-color: var(--light-gray);
-    color: var(--accent-color);
-}
-
-/* Estilos para el botón de hamburguesa principal */
-#mobile-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 10px;
-}
-
-#mobile-menu-toggle span {
-    display: block;
-    width: 25px;
-    height: 3px;
-    background-color: var(--primary-color);
-    margin: 4px 0;
-    transition: all 0.3s;
-}
-
-/* Estilos para el botón de menú de usuario (mobile) */
-.user-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-.user-menu-toggle span {
-    display: block;
-    width: 20px;
-    height: 2px;
-    background-color: var(--primary-color);
-    margin: 3px 0;
-    transition: all 0.3s;
-}
-
-/* Mostrar dropdown al hacer hover (solo escritorio) */
-@media (min-width: 769px) {
-    #user-name:hover + #user-dropdown,
-    #user-dropdown:hover {
-        display: block;
-    }
-    
-    #mobile-menu-toggle, .user-menu-toggle {
-        display: none !important;
-    }
-}
-
-/* Estilos para móvil */
+/* ==================== VERSIÓN MÓVIL ==================== */
 @media (max-width: 768px) {
-    #mobile-menu-toggle {
-        display: block;
+    /* Mostrar botón hamburguesa principal */
+    .menu-toggle {
+        display: flex;
     }
     
-    .user-menu-toggle {
-        display: block;
+    /* Estilos para el menú principal móvil */
+    .nav-list {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 70%;
+        height: 100vh;
+        background-color: var(--secondary-color);
+        flex-direction: column;
+        justify-content: center;
+        gap: 2rem;
+        transition: right 0.3s ease;
+        z-index: 1001;
+        padding-top: 80px;
     }
     
+    .nav-list.active {
+        right: 0;
+    }
+    
+    /* Estilos para el menú usuario móvil */
     #auth-link-container {
-        position: relative;
         display: flex;
         align-items: center;
     }
     
-    #user-dropdown {
+    .user-menu-toggle {
+        display: flex;
+    }
+    
+    #auth-link {
         display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: var(--secondary-color);
-        width: 200px;
-        padding: 1rem;
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        z-index: 1001;
+    }
+    
+    #user-dropdown {
+        position: static;
+        display: none;
+        width: 100%;
+        box-shadow: none;
+        border: none;
+        background: transparent;
+        text-align: center;
     }
     
     #user-dropdown.mobile-visible {
         display: block;
+        margin-top: 1rem;
     }
     
     #user-dropdown a {
-        color: var(--primary-color);
-        text-align: left;
+        color: var(--accent-color);
+        padding: 0.5rem;
     }
     
-    /* Estado activo para los botones de hamburguesa */
-    #mobile-menu-toggle.active span:nth-child(1) {
+    #user-name {
+        color: var(--accent-color);
+        text-align: center;
+        padding: 0.5rem;
+        border-bottom: none;
+    }
+    
+    /* Animaciones para botones hamburguesa */
+    .menu-toggle.active span:nth-child(1) {
         transform: rotate(45deg) translate(5px, 5px);
     }
     
-    #mobile-menu-toggle.active span:nth-child(2) {
+    .menu-toggle.active span:nth-child(2) {
         opacity: 0;
     }
     
-    #mobile-menu-toggle.active span:nth-child(3) {
+    .menu-toggle.active span:nth-child(3) {
         transform: rotate(-45deg) translate(5px, -5px);
     }
     
@@ -1203,5 +1157,21 @@ footer {
     
     .user-menu-toggle.active span:nth-child(3) {
         transform: rotate(-45deg) translate(4px, -4px);
+    }
+    
+    /* Overlay para cuando el menú está abierto */
+    .nav-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+    }
+    
+    .nav-overlay.active {
+        display: block;
     }
 }

@@ -118,18 +118,22 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
+<nav class="navbar">
     <div class="container">
         <div class="logo-container">
             <a href="index.html" class="logo">
                 <img src="assets/logoUnic.png" alt="The Unic Barber Logo" class="main-logo">
             </a>
         </div>
-        <div class="menu-toggle" id="mobile-menu">
+        
+        <!-- Botón Hamburguesa Principal -->
+        <button class="menu-toggle" id="mobile-menu">
             <span></span>
             <span></span>
             <span></span>
-        </div>
+        </button>
+        
+        <!-- Lista de Navegación -->
         <ul class="nav-list">
             <li><a href="index.html">Inicio</a></li>
             <li><a href="index.html#servicios">Servicios</a></li>
@@ -137,15 +141,29 @@
             <li><a href="index.html#galeria">Galería</a></li>
             <li><a href="index.html#sedes">Sedes</a></li>
             <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
+            
+            <!-- Menú de Usuario -->
             <li id="auth-link-container">
                 <a href="login.html" id="auth-link">Iniciar sesión</a>
-                <div id="user-dropdown" class="dropdown" style="display: none;">
+                
+                <!-- Botón Hamburguesa Usuario (solo móvil) -->
+                <button class="user-menu-toggle" id="user-menu-btn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Dropdown Usuario -->
+                <div id="user-dropdown" class="dropdown">
                     <span id="user-name"></span>
                     <a href="#" id="cerrarSesion">Cerrar sesión</a>
                 </div>
             </li>
         </ul>
     </div>
+    
+    <!-- Overlay para menú móvil -->
+    <div class="nav-overlay"></div>
 </nav>
 
     <section class="hero" id="inicio">
@@ -547,6 +565,6 @@
     <script type="module" src="js/session.js"></script>
     <script type="module" src="js/index.js"></script>
     <script type="module" src="js/login.js"></script>
-
+    <script src="js/menu.js"></script>
 </body>
 </html>
