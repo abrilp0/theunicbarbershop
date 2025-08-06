@@ -121,43 +121,31 @@
 <nav class="navbar">
     <div class="container">
         <div class="logo-container">
-            <a href="index.html"><img src="assets/logoUnic.png" alt="The Unic Barber Logo"></a>
+            <a href="index.html" class="logo">
+                <img src="assets/logoUnic.png" alt="The Unic Barber Logo" class="main-logo">
+            </a>
         </div>
-        
-        <!-- Botón Hamburguesa Principal -->
-        <button class="menu-toggle" id="mobile-menu">
-            <span class="menu-bar"></span>
-            <span class="menu-bar"></span>
-            <span class="menu-bar"></span>
-        </button>
-        
-        <!-- Menú de Navegación -->
+        <div class="menu-toggle" id="mobile-menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
         <ul class="nav-list">
             <li><a href="index.html">Inicio</a></li>
             <li><a href="index.html#servicios">Servicios</a></li>
             <li><a href="index.html#barberos">Nuestros Barberos</a></li>
             <li><a href="index.html#galeria">Galería</a></li>
             <li><a href="index.html#sedes">Sedes</a></li>
-            <li><a href="agendar.html" class="btn-agendar">Agendar</a></li>
-            
-            <!-- Menú de Usuario -->
-            <li id="user-menu-container">
+            <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
+            <li id="auth-link-container">
                 <a href="login.html" id="auth-link">Iniciar sesión</a>
-                <div id="user-menu-content">
-                    <button class="user-toggle" id="user-menu-btn">
-                        <span id="user-name-mobile"></span>
-                        <span class="user-arrow">▼</span>
-                    </button>
-                    <div id="user-dropdown">
-                        <a href="#" id="logout-btn">Cerrar sesión</a>
-                    </div>
+                <div id="user-dropdown" class="dropdown" style="display: none;">
+                    <span id="user-name"></span>
+                    <a href="#" id="cerrarSesion">Cerrar sesión</a>
                 </div>
             </li>
         </ul>
     </div>
-    
-    <!-- Overlay para menú móvil -->
-    <div class="nav-overlay"></div>
 </nav>
 
     <section class="hero" id="inicio">

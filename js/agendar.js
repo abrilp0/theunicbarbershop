@@ -58,6 +58,27 @@ document.addEventListener('DOMContentLoaded', async function () {
     await verificarDisponibilidad();
 });
 
+function setupMobileMenu() {
+    if (mobileMenuToggle && navList) {
+        mobileMenuToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            navList.classList.toggle('active');
+            
+            // Cerrar el menú de usuario si está abierto
+            if (userDropdown.classList.contains('mobile-visible')) {
+                userDropdown.classList.remove('mobile-visible');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenuToggle.classList.remove('active');
+                navList.classList.remove('active');
+            });
+        });
+    }
+}
+
 // Nueva función para manejar el menú de usuario
 function setupUserMenu() {
     // Crear el botón de menú de usuario si no existe
@@ -548,5 +569,3 @@ function mostrarMensaje(msg, tipo = 'info') {
     mensaje.textContent = msg;
     mensaje.className = `mensaje ${tipo}`;
 }
-import { setupMobileMenu } from './menu.js';
-setupMobileMenu();

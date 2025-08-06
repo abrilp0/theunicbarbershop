@@ -1,17 +1,13 @@
-// index.js
 import { supabase } from './supabase.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadPromociones();
-
+        
         // Cambiar promociones al seleccionar otra sede
         document.getElementById('sede-promociones')?.addEventListener('change', async (e) => {
             await loadPromociones(e.target.value);
         });
-
-        // Activar menú hamburguesa en móvil
-        setupMobileMenu();
     } catch (error) {
         console.error('Error al cargar promociones:', error);
     }
@@ -19,8 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadPromociones(sede = 'todas') {
     try {
-        const hoy = new Date().toISOString().split('T')[0];
-
+        const hoy = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        
         let query = supabase
             .from('promociones')
             .select('*')
@@ -34,11 +30,11 @@ async function loadPromociones(sede = 'todas') {
 
         const { data: promociones, error } = await query;
 
-        console.log('Promociones cargadas:', promociones);
+        console.log('Promociones cargadas:', promociones); // Debug
 
         const container = document.getElementById('promociones-container');
         if (!container) return;
-
+        
         container.innerHTML = '';
 
         if (error || !promociones || promociones.length === 0) {
@@ -50,7 +46,7 @@ async function loadPromociones(sede = 'todas') {
             const nombreSede = getNombreSede(promo.sede);
             const inicio = formatDate(promo.fecha_inicio);
             const fin = formatDate(promo.fecha_fin);
-
+            
             const promoEl = document.createElement('div');
             promoEl.className = 'promo-card';
             promoEl.innerHTML = `
@@ -83,25 +79,3 @@ function formatDate(dateString) {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('es-ES', options);
 }
-
-function setupMobileMenu() {
-    const mobileMenuToggle = document.getElementById('mobile-menu');
-    const navList = document.querySelector('.nav-list');
-    const navLinks = document.querySelectorAll('.nav-list a');
-
-    if (mobileMenuToggle && navList) {
-        mobileMenuToggle.addEventListener('click', function () {
-            this.classList.toggle('active');
-            navList.classList.toggle('active');
-        });
-
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenuToggle.classList.remove('active');
-                navList.classList.remove('active');
-            });
-        });
-    }
-}
-import { setupMobileMenu } from './menu.js';
-setupMobileMenu();
