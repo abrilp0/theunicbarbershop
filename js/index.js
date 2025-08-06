@@ -1,7 +1,6 @@
 // index.js
 import { supabase } from './supabase.js';
-import { setupMobileMenu } from './menu.js'; // Ajusta la ruta según sea necesario
-
+import './js/menu.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
