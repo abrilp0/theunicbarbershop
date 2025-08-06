@@ -548,3 +548,5 @@ function mostrarMensaje(msg, tipo = 'info') {
     mensaje.textContent = msg;
     mensaje.className = `mensaje ${tipo}`;
 }
+import { setupMobileMenu } from './menu.js';
+setupMobileMenu();
