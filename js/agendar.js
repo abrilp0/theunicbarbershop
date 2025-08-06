@@ -1,6 +1,8 @@
 // js/agendar.js
 import { supabase } from './supabase.js';
 import { logoutUser } from './auth.js';
+import { setupMobileMenu } from './menu.js'; // Ajusta la ruta según sea necesario
+
 
 // Elementos del DOM
 const form = document.getElementById('bookingForm');
@@ -548,5 +550,4 @@ function mostrarMensaje(msg, tipo = 'info') {
     mensaje.textContent = msg;
     mensaje.className = `mensaje ${tipo}`;
 }
-import { setupMobileMenu } from './menu.js';
-setupMobileMenu();
+
