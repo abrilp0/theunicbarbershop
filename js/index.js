@@ -1,6 +1,5 @@
 // index.js
 import { supabase } from './supabase.js';
-import './js/menu.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -104,3 +103,5 @@ function setupMobileMenu() {
         });
     }
 }
+import { setupMobileMenu } from './menu.js';
+setupMobileMenu();
