@@ -1066,6 +1066,168 @@ footer {
     .promo-dates {
         font-style: italic;
     }
+/* ==================== NAVBAR GENERAL ==================== */
+.navbar {
+    background-color: var(--navbar-bg);
+    padding: 1rem 0;
+    position: relative;
+    z-index: 1000;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.logo-container img {
+    height: 50px;
+    transition: transform 0.3s;
+}
+
+.logo-container img:hover {
+    transform: scale(1.05);
+}
+
+/* ==================== MENÚ PRINCIPAL ==================== */
+.nav-list {
+    display: flex;
+    list-style: none;
+    gap: 1.5rem;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-list a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+    position: relative;
+}
+
+.nav-list a:hover {
+    color: var(--accent-color);
+}
+
+.nav-list a.active {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.btn-agendar {
+    background-color: var(--accent-color);
+    color: white !important;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.btn-agendar:hover {
+    background-color: var(--accent-dark);
+    transform: translateY(-2px);
+}
+
+/* ==================== MENÚ USUARIO ==================== */
+#auth-link-container {
+    position: relative;
+}
+
+#user-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: var(--secondary-color);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    z-index: 1000;
+    display: none;
+}
+
+#user-dropdown a {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+#user-dropdown a:hover {
+    background-color: var(--light-gray);
+    color: var(--accent-color);
+}
+
+#user-name {
+    display: block;
+    padding: 0.75rem 1rem;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== MENÚ HAMBURGUESA ==================== */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    z-index: 1002;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 24px;
+}
+
+.menu-toggle span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: var(--primary-color);
+    transition: all 0.3s;
+    transform-origin: center;
+}
+
+/* Botón hamburguesa usuario móvil */
+.user-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    margin-left: 10px;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 20px;
+}
+
+.user-menu-toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: all 0.3s;
+    transform-origin: center;
+}
+
+/* ==================== VERSIÓN ESCRITORIO ==================== */
+@media (min-width: 769px) {
+    /* Mostrar dropdown usuario al hacer hover */
+    #auth-link-container:hover #user-dropdown,
+    #user-dropdown:hover {
+        display: block;
+    }
+    
+    /* Ocultar botones hamburguesa en desktop */
+    .menu-toggle, .user-menu-toggle {
+        display: none !important;
+    }
+}
+
 /* ==================== VERSIÓN MÓVIL ==================== */
 @media (max-width: 768px) {
     /* Mostrar botón hamburguesa principal */
