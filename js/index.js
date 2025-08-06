@@ -103,3 +103,5 @@ function setupMobileMenu() {
         });
     }
 }
+import { setupMobileMenu } from './menu.js';
+setupMobileMenu();
