@@ -1205,3 +1205,20 @@ footer {
         transform: rotate(-45deg) translate(4px, -4px);
     }
 }
+.menu-toggle .close-icon {
+    display: none;
+    font-size: 24px;
+    color: white;
+    position: absolute;
+    top: -2px;
+    right: 0;
+    padding: 0 10px;
+}
+
+.menu-toggle.active .close-icon {
+    display: block;
+}
+
+.menu-toggle.active span {
+    display: none;
+}
