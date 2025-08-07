@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners para el modal de cumpleaños
     cumpleanosFechaInput.addEventListener('change', loadAvailableTimesForBirthdayBooking);
     cumpleanosBarberoSelect.addEventListener('change', loadAvailableTimesForBirthdayBooking);
-});
+
 
 // Funciones auxiliares globales (para ser accesibles desde el HTML)
 window.toggleClienteBlock = toggleClienteBlock;
