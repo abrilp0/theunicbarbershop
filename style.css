@@ -1066,26 +1066,146 @@ footer {
     .promo-dates {
         font-style: italic;
     }
-/* ==================== MENÚ USUARIO ADAPTATIVO ==================== */
+/* ==================== ESTILOS PARA EL MENÚ HAMBURGUESA ==================== */
+.menu-toggle {
+    display: none; /* Oculto por defecto en pantallas grandes */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+}
+
+/* Animación del botón de hamburguesa (cuando está activo) */
+.menu-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* ==================== ESTILOS PARA LA LISTA DE NAVEGACIÓN ==================== */
+.nav-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.nav-list {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-list li {
+    margin-left: 20px;
+}
+
+.nav-list li a {
+    text-decoration: none;
+    color: white; /* 👈 Este es el cambio más importante */
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-list li a:hover {
+    color: var(--accent-color);
+}
+
+.btn-agendar {
+    background-color: var(--accent-color);
+    color: black !important; /* Asegurar que el texto sea visible en el botón */
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.btn-agendar:hover {
+    background-color: #e0b830; /* Un color un poco más oscuro al hacer hover */
+}
+
+/* ==================== MENÚ DE USUARIO ==================== */
+
+/* Contenedor del enlace de autenticación o el menú del usuario */
+#auth-link-container {
+    position: relative;
+}
+
+/* Enlace "Iniciar Sesión" (visible por defecto) */
+#auth-link {
+    display: flex;
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+    padding: 0.5rem 0;
+}
+
+/* Botón con el nombre del usuario (cuando está logueado) */
+.user-menu-toggle {
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s;
+}
+
+.user-menu-toggle:hover {
+    color: var(--accent-color);
+}
+
+/* Icono de flecha */
+.user-menu-toggle::after {
+    content: '▼';
+    font-size: 0.7em;
+    transition: transform 0.3s;
+}
+
+#auth-link-container:hover .user-menu-toggle::after {
+    transform: rotate(180deg);
+}
+
+/* Menú desplegable del usuario */
 #user-dropdown {
     position: absolute;
-    right: 0;
     top: 100%;
+    right: 0;
     background-color: var(--secondary-color);
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     min-width: 180px;
     z-index: 1000;
-    display: none;
+    display: none; /* Oculto por defecto */
+    padding: 5px 0;
+    transform: translateY(10px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+/* Mostrar dropdown con hover */
+#auth-link-container:hover #user-dropdown {
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Estilo de enlaces en el dropdown */
 #user-dropdown a {
     display: block;
     padding: 0.75rem 1rem;
     color: var(--primary-color);
     text-decoration: none;
     transition: all 0.3s;
+    font-weight: 500;
 }
 
 #user-dropdown a:hover {
@@ -1093,115 +1213,50 @@ footer {
     color: var(--accent-color);
 }
 
-/* Estilos para el botón de hamburguesa principal */
-#mobile-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
+/* Nombre del usuario */
+#user-name {
     cursor: pointer;
-    padding: 10px;
+    color: var(--secondary-color);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    display: inline-block;
 }
 
-#mobile-menu-toggle span {
-    display: block;
-    width: 25px;
-    height: 3px;
-    background-color: var(--primary-color);
-    margin: 4px 0;
-    transition: all 0.3s;
-}
-
-/* Estilos para el botón de menú de usuario (mobile) */
-.user-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-.user-menu-toggle span {
-    display: block;
-    width: 20px;
-    height: 2px;
-    background-color: var(--primary-color);
-    margin: 3px 0;
-    transition: all 0.3s;
-}
-
-/* Mostrar dropdown al hacer hover (solo escritorio) */
-@media (min-width: 769px) {
-    #user-name:hover + #user-dropdown,
-    #user-dropdown:hover {
-        display: block;
-    }
-    
-    #mobile-menu-toggle, .user-menu-toggle {
-        display: none !important;
-    }
-}
-
-/* Estilos para móvil */
+/* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
-    #mobile-menu-toggle {
-        display: block;
-    }
-    
-    .user-menu-toggle {
-        display: block;
-    }
-    
-    #auth-link-container {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-    
-    #user-dropdown {
+    #auth-link-container.logged-in #auth-link {
         display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: var(--secondary-color);
-        width: 200px;
-        padding: 1rem;
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        z-index: 1001;
     }
-    
-    #user-dropdown.mobile-visible {
-        display: block;
+
+    .nav-list.active #auth-link-container .user-menu-toggle {
+        display: flex;
+        color: var(--secondary-color);
+        width: 100%;
+        justify-content: center;
+        padding: 15px 20px;
     }
-    
+
+    #user-dropdown {
+        position: static;
+        width: 100%;
+        background-color: var(--primary-color);
+        box-shadow: none;
+        border: none;
+        transform: translateY(0);
+        opacity: 1;
+        display: none;
+    }
+
     #user-dropdown a {
-        color: var(--primary-color);
-        text-align: left;
+        color: var(--secondary-color);
+        text-align: center;
     }
-    
-    /* Estado activo para los botones de hamburguesa */
-    #mobile-menu-toggle.active span:nth-child(1) {
-        transform: rotate(45deg) translate(5px, 5px);
+
+    #user-dropdown a:hover {
+        background-color: rgba(212, 175, 55, 0.2);
     }
-    
-    #mobile-menu-toggle.active span:nth-child(2) {
-        opacity: 0;
-    }
-    
-    #mobile-menu-toggle.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(5px, -5px);
-    }
-    
-    .user-menu-toggle.active span:nth-child(1) {
-        transform: rotate(45deg) translate(4px, 4px);
-    }
-    
-    .user-menu-toggle.active span:nth-child(2) {
-        opacity: 0;
-    }
-    
-    .user-menu-toggle.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(4px, -4px);
+
+    #auth-link-container.show-dropdown #user-dropdown {
+        display: block;
     }
 }

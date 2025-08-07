@@ -112,38 +112,36 @@ function setupUserMenu() {
         }
     });
 }
-
 async function setupUserSession() {
+    console.log('[SESSION] Iniciando verificación de sesión...');
+
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    console.log('[SESSION] Resultado:', session, sessionError);
 
     if (sessionError || !session) {
-        console.warn('No hay sesión activa para el cliente. Redirigiendo a login.html');
-        if (window.location.pathname !== '/login.html') {
+        console.warn('[SESSION] No hay sesión activa. Redirigiendo a login.html');
+        if (!window.location.pathname.endsWith('login.html')) {
             window.location.replace('login.html');
         }
         return;
     }
 
+    // Usuario autenticado
     isAuthenticated = true;
     currentUserId = session.user.id;
 
-    authLink.style.display = 'none';
-    userDropdown.style.display = 'flex';
-    userNameSpan.textContent = session.user.user_metadata?.full_name || session.user.email;
+    // Mostrar contenedor y ocultar el botón de login
+    if (userDropdown && userNameSpan) {
+        userDropdown.style.display = 'flex';
+        userDropdown.style.visibility = 'visible';
+        authLink?.classList.add('hidden');
 
-    userNameSpan.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const dropdownContent = cerrarSesionBtn.parentElement;
-        dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-    });
+        const fullName = session.user.user_metadata?.full_name || session.user.email;
+        userNameSpan.textContent = fullName;
+        console.log('[UI] Mostrando nombre:', fullName);
+    }
 
-    document.addEventListener('click', (e) => {
-        const dropdownContent = cerrarSesionBtn.parentElement;
-        if (!userDropdown.contains(e.target)) {
-            dropdownContent.style.display = 'none';
-        }
-    });
-
+    // Lógica de cliente en base de datos
     try {
         let { data: cliente, error: clienteError } = await supabase
             .from('clientes')
@@ -152,10 +150,10 @@ async function setupUserSession() {
             .single();
 
         if (clienteError && clienteError.code === 'PGRST116') {
-            console.warn('Perfil de cliente no encontrado. Creando nuevo perfil.');
+            console.warn('Perfil no encontrado. Creando...');
             const { error: insertError } = await supabase
                 .from('clientes')
-                .insert({ 
+                .insert({
                     id: currentUserId,
                     nombre: session.user.user_metadata?.full_name || session.user.email,
                     email: session.user.email,
@@ -163,36 +161,54 @@ async function setupUserSession() {
                 });
             if (insertError) throw insertError;
 
-            const { data: newCliente, error: newClienteError } = await supabase
+            ({ data: cliente } = await supabase
                 .from('clientes')
                 .select('*')
                 .eq('id', currentUserId)
-                .single();
-
-            if (newClienteError) throw newClienteError;
-            cliente = newCliente;
+                .single());
         } else if (clienteError) {
             throw clienteError;
         }
 
-        if (cliente) {
-            if (cliente.bloqueado) {
-                mostrarMensaje('Tu cuenta ha sido bloqueada. No puedes agendar citas en este momento.', 'error');
-                bookingBtn.disabled = true;
-                Array.from(form.elements).forEach(element => element.disabled = true);
-                return;
-            }
+        if (cliente?.bloqueado) {
+            mostrarMensaje('Tu cuenta ha sido bloqueada. No puedes agendar citas.', 'error');
+            bookingBtn.disabled = true;
+            Array.from(form.elements).forEach(el => el.disabled = true);
+            return;
+        }
+
+        if (cliente && nameInput && phoneInput) {
             nameInput.value = cliente.nombre;
             phoneInput.value = cliente.telefono;
             nameInput.disabled = true;
             phoneInput.disabled = true;
         }
+
     } catch (e) {
-        console.error('Error al cargar/crear datos del cliente:', e.message);
+        console.error('Error al cargar datos del cliente:', e.message);
         mostrarMensaje(`Error al cargar datos de usuario: ${e.message}`, 'error');
     }
 }
 
+function setupLogout() {
+    if (cerrarSesionBtn) {
+        cerrarSesionBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error('Error al cerrar sesión:', error.message);
+                return;
+            }
+            window.location.href = 'index.html';
+        });
+    }
+}
+
+// Asegurar que la sesión se cargue después de que exista el DOM
+document.addEventListener('DOMContentLoaded', () => {
+    setupUserSession();
+    setupLogout();
+});
 function getNextValidBookingDate() {
     let nextDay = new Date();
     nextDay.setDate(nextDay.getDate() + 1);
@@ -204,15 +220,7 @@ function getNextValidBookingDate() {
     return nextDay.toISOString().split('T')[0];
 }
 
-function setupLogout() {
-    if (cerrarSesionBtn) {
-        cerrarSesionBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            await logoutUser();
-            window.location.href = 'index.html';
-        });
-    }
-}
+
 
 /**
  * Configura los eventos del formulario.

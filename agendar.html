@@ -67,34 +67,44 @@
 </head>
 <body>
 <nav class="navbar">
-    <div class="container">
-        <div class="logo-container">
-            <a href="index.html" class="logo">
-                <img src="assets/logoUnic.png" alt="The Unic Barber Logo" class="main-logo">
-            </a>
-        </div>
-        <div class="menu-toggle" id="mobile-menu">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span class="close-icon">&times;</span>
-        </div>
-        <ul class="nav-list">
-            <li><a href="index.html">Inicio</a></li>
-            <li><a href="index.html#servicios">Servicios</a></li>
-            <li><a href="index.html#barberos">Nuestros Barberos</a></li>
-            <li><a href="index.html#galeria">Galería</a></li>
-            <li><a href="index.html#sedes">Sedes</a></li>
-            <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
-            <li id="auth-link-container">
-                <a href="login.html" id="auth-link">Iniciar sesión</a>
-                <div id="user-dropdown" class="dropdown" style="display: none;">
-                    <span id="user-name"></span>
-                    <a href="#" id="cerrarSesion">Cerrar sesión</a>
-                </div>
-            </li>
-        </ul>
+  <div class="container">
+    <div class="logo-container">
+      <a href="index.html" class="logo">
+        <img src="assets/logoUnic.png" alt="The Unic Barber Logo" class="main-logo">
+      </a>
     </div>
+
+    <button class="menu-toggle" id="mobile-menu-toggle">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span class="close-icon">&times;</span>
+    </button>
+
+    <div class="nav-wrapper">
+      <ul class="nav-list">
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="index.html#servicios">Servicios</a></li>
+        <li><a href="index.html#barberos">Nuestros Barberos</a></li>
+        <li><a href="index.html#galeria">Galería</a></li>
+        <li><a href="index.html#sedes">Sedes</a></li>
+        <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
+
+        <!-- Contenedor de login o usuario -->
+        <li id="auth-link-container">
+          <a href="login.html" id="auth-link">Iniciar sesión</a>
+
+          <!-- Dropdown de usuario (inicia oculto, se muestra si hay sesión) -->
+          <div id="user-dropdown" class="dropdown" style="display: none;">
+            <span id="user-name" class="user-menu-toggle"></span>
+            <div class="dropdown-content">
+              <a href="#" id="cerrarSesion">Cerrar sesión</a>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
 </nav>
 
 <section class="booking-form">
