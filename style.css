@@ -1260,3 +1260,23 @@ footer {
         display: block;
     }
 }
+.mobile-only { display: none; }
+.desktop-only { display: flex; }
+
+@media (max-width: 768px) {
+  .mobile-only { display: block; }
+  .desktop-only { display: none; }
+  .mobile-menu {
+    display: none;
+    background: #000;
+    padding: 10px;
+  }
+  .mobile-menu.show {
+    display: block;
+  }
+  .user-dropdown span {
+    font-weight: bold;
+    color: white;
+  }
+}
+

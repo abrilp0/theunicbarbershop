@@ -132,9 +132,12 @@ async function setupUserSession() {
 
     // Mostrar contenedor y ocultar el botón de login
     if (userDropdown && userNameSpan) {
+        // Quitar cualquier ocultamiento previo
+        userDropdown.classList.remove('hidden');
         userDropdown.style.display = 'flex';
         userDropdown.style.visibility = 'visible';
-        authLink?.classList.add('hidden');
+
+        if (authLink) authLink.classList.add('hidden');
 
         const fullName = session.user.user_metadata?.full_name || session.user.email;
         userNameSpan.textContent = fullName;
@@ -189,6 +192,7 @@ async function setupUserSession() {
         mostrarMensaje(`Error al cargar datos de usuario: ${e.message}`, 'error');
     }
 }
+
 
 function setupLogout() {
     if (cerrarSesionBtn) {

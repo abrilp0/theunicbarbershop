@@ -141,12 +141,16 @@
                 <li><a href="index.html#galeria">Galería</a></li>
                 <li><a href="index.html#sedes">Sedes</a></li>
                 <li><a href="agendar.html" class="btn-agendar active">Agendar</a></li>
-                <li id="auth-link-container">
-                    <a href="login.html" id="auth-link">Iniciar sesión</a>
 
+                <!-- Contenedor de sesión -->
+                <li id="auth-link-container">
+                    <!-- Link para usuarios no logeados -->
+                    <a href="login.html" id="auth-link" style="display: block;">Iniciar sesión</a>
+
+                    <!-- Menú de usuario logeado -->
                     <div id="user-dropdown" class="dropdown" style="display: none;">
                         <button class="user-menu-toggle">
-                            <span id="user-name"></span>
+                            <span id="user-name"></span> ▼
                         </button>
                         <div class="dropdown-content">
                             <a href="#" id="cerrarSesion">Cerrar sesión</a>
