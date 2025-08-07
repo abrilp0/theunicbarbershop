@@ -9,27 +9,40 @@
     <link rel="icon" href="assets/logo.png" type="image/png">
 </head>
 <body>
-        <script type="module">
-        import { checkAuth, logoutUser } from './js/auth.js';
-        async function checkAdminAccess() {
-            const { isAuthenticated, isAdmin, error } = await checkAuth();
-            const params = new URLSearchParams(window.location.search);
-            const message = params.get('message');
+<script type="module">
+    import { checkAuth, logoutUser } from './js/auth.js';
+    
+    async function checkAdminAccess() {
+        try {
+            const { isAuthenticated, isAdmin, error } = await checkAuth();
+            const params = new URLSearchParams(window.location.search);
+            const message = params.get('message');
 
-            if (!isAuthenticated || !isAdmin) {
-                await logoutUser(); // Cierra sesión si no es admin
-                const redirectUrl = `/login.html?error=Acceso%20denegado.%20Solo%20para%20administradores.`;
-                window.location.href = redirectUrl;
-            } else {
-                document.body.style.display = 'block';
-            }
-        }
-        
-        // Evita que el contenido se muestre antes de la verificación
-        document.body.style.display = 'none';
-        
-        document.addEventListener('DOMContentLoaded', checkAdminAccess);
-    </script>    
+            if (!isAuthenticated || !isAdmin) {
+                await logoutUser();
+                const redirectUrl = `login.html?error=Acceso%20denegado.%20Solo%20para%20administradores.`;
+                window.location.href = redirectUrl;
+                return; // Salir temprano
+            }
+            
+            // Mostrar contenido solo si la autenticación es exitosa
+            document.body.style.display = 'block';
+            
+            // Cargar datos del admin
+            loadAdminData();
+            
+        } catch (error) {
+            console.error('Error en verificación de admin:', error);
+            window.location.href = 'login.html?error=Error%20de%20verificación';
+        }
+    }
+
+    // Evitar mostrar contenido antes de la verificación
+    document.body.style.display = 'none';
+    
+    // Usar evento load en lugar de DOMContentLoaded para móviles
+    window.addEventListener('load', checkAdminAccess);
+</script>    
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="logo">
@@ -148,8 +161,8 @@
         </div>
     </div>
 
-    <audio id="notificationSound" src="/assets/notificacionSound.mp3" preload="auto"></audio>
-    <audio id="birthdaySound" src="/assets/happy-birthday.mp3" preload="auto"></audio>
+    <audio id="notificationSound" src="assets/notificacionSound.mp3" preload="auto"></audio>
+    <audio id="birthdaySound" src="assets/happy-birthday.mp3" preload="auto"></audio>
 
     <div id="cumpleanosBookingModal" class="modal">
         <div class="modal-content">

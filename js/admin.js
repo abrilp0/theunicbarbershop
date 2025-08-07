@@ -33,7 +33,27 @@ let currentSede = null;
 let currentCumpleanosCliente = null; // Para almacenar el cliente seleccionado para agendar
 
 // Inicialización
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar clics/touch en botones
+    document.querySelectorAll('.btn, a').forEach(element => {
+        element.addEventListener('touchstart', function() {
+            this.classList.add('active');
+        });
+        
+        element.addEventListener('touchend', function() {
+            this.classList.remove('active');
+        });
+    });
+    
+    // Evitar zoom no deseado en inputs
+    document.querySelectorAll('input, select, textarea').forEach(input => {
+        input.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            this.style.fontSize = '16px'; // Forzar tamaño de fuente para evitar zoom
+        }, { passive: false });
+    });
+});
+
     // 🔊 Desbloquear reproducción automática de sonidos en navegadores
     document.body.addEventListener('click', () => {
         try {
