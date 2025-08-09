@@ -243,20 +243,13 @@ async function loadClientes() {
     }
 }
 
-// Cargar citas (solo futuras, para mostrar en el panel)
 async function loadCitas() {
     try {
         const hoy = new Date();
         const hoyStr = hoy.toISOString().split('T')[0];
-        
-        let sedeFiltrada = currentSede;
-        
-        // Ajuste para que 'manuel_rodriguez' coincida con 'manuel rodriguez' o 'Manuel Rodríguez'
-        if (currentSede === 'manuel_rodriguez') {
-            sedeFiltrada = 'Manuel Rodríguez'; 
-        }
 
-        console.log("Cargando citas para sede:", sedeFiltrada);
+        console.log("Cargando citas para sede:", currentSede);
+
         const { data: citas, error } = await supabase
             .from('citas')
             .select(`
@@ -264,8 +257,8 @@ async function loadCitas() {
                 clientes:cliente_id (nombre, telefono),
                 barberos:barbero_id (nombre)
             `)
-            .gte('fecha', hoyStr) // Solo citas desde hoy en adelante
-            .eq('sede', sedeFiltrada) // Filtrar por la sede corregida
+            .gte('fecha', hoyStr)
+            .eq('sede', currentSede) // ahora que todo está unificado
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true });
 
@@ -274,17 +267,21 @@ async function loadCitas() {
         console.log("Citas obtenidas (futuras):", citas);
         citasList.innerHTML = '';
 
-        if (citas.length === 0) {
+        if (!citas || citas.length === 0) {
             citasList.innerHTML = '<p>No hay citas próximas para esta sede.</p>';
             return;
         }
 
         citas.forEach(cita => {
+            const nombreCliente = cita.clientes?.nombre || 'Cliente sin registro';
+            const telefonoCliente = cita.clientes?.telefono || '';
+
             const citaItem = document.createElement('div');
             citaItem.className = 'item';
             citaItem.innerHTML = `
-                <h3>${cita.clientes.nombre}</h3>
-                <p><i class="fas fa-scissors"></i> ${cita.servicio}</p>
+                <h3>${nombreCliente}</h3>
+                ${telefonoCliente ? `<p><i class="fas fa-phone"></i> ${telefonoCliente}</p>` : ''}
+                <p><i class="fas fa-scissors"></i> ${cita.servicio || 'Sin servicio'}</p>
                 <p><i class="fas fa-user"></i> Barbero: ${cita.barberos ? cita.barberos.nombre : 'No asignado'}</p>
                 <p><i class="fas fa-calendar-day"></i> ${formatDate(cita.fecha)} a las ${cita.hora}</p>
                 <p class="fecha">${cita.notas || 'Sin notas'}</p>
@@ -302,39 +299,6 @@ async function loadCitas() {
     }
 }
 
-// Función para obtener citas filtradas por rango de fechas
-async function getCitasForExportByDateRange(fechaInicio, fechaFin) {
-    try {
-        let query = supabase
-            .from('citas')
-            .select(`
-                *,
-                clientes:cliente_id (nombre, telefono, email),
-                barberos:barbero_id (nombre)
-            `)
-            .eq('sede', currentSede); // Siempre filtrar por sede del admin
-
-        if (fechaInicio) {
-            query = query.gte('fecha', fechaInicio);
-        }
-        if (fechaFin) {
-            query = query.lte('fecha', fechaFin);
-        }
-
-        query = query
-            .order('fecha', { ascending: false })
-            .order('hora', { ascending: false });
-
-        const { data: citas, error } = await query;
-
-        if (error) throw error;
-        return citas;
-    } catch (error) {
-        console.error("Error al obtener citas para exportar:", error);
-        showNotification('Error al obtener datos para exportación.', 'error');
-        return [];
-    }
-}
 
 // Función: Exportar citas a Excel con filtro de fechas
 async function exportarCitasAExcel() {

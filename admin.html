@@ -10,39 +10,76 @@
 </head>
 <body>
 <script type="module">
-    import {logoutUser } from '/js/auth.js';
-    
-    async function checkAdminAccess() {
-        try {
-            const { isAuthenticated, isAdmin, error } = await checkAuth();
-            const params = new URLSearchParams(window.location.search);
-            const message = params.get('message');
+    import { supabase } from '/js/supabase.js';
+    import { logoutUser } from '/js/auth.js';
 
-            if (!isAuthenticated || !isAdmin) {
+    // Ocultar contenido inicialmente
+    document.body.style.display = 'none';
+    
+    async function verifyAdminSession() {
+        try {
+            // 1. Verificar que hay usuario logueado
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) {
                 await logoutUser();
-                const redirectUrl = `login.html?error=Acceso%20denegado.%20Solo%20para%20administradores.`;
-                window.location.href = redirectUrl;
-                return; // Salir temprano
+                window.location.href = 'login-admin.html?error=Por favor inicia sesión';
+                return false;
             }
-            
-            // Mostrar contenido solo si la autenticación es exitosa
+
+            // 2. Tomar sede desde URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const sedeParam = urlParams.get('sede')?.toLowerCase().trim();
+
+            // Validar sede
+            if (!['brasil', 'manuel_rodriguez'].includes(sedeParam)) {
+                await logoutUser();
+                window.location.href = 'login-admin.html?error=Sede no válida';
+                return false;
+            }
+
+            return {
+                sede: sedeParam,
+                email: user.email
+            };
+        } catch (error) {
+            console.error('Error en verifyAdminSession:', error);
+            await logoutUser();
+            window.location.href = 'login-admin.html?error=Error de verificación';
+            return false;
+        }
+    }
+    
+    async function initAdminPanel() {
+        const adminInfo = await verifyAdminSession();
+        if (!adminInfo) return;
+        
+        try {
+            // Mostrar contenido
             document.body.style.display = 'block';
             
-            // Cargar datos del admin
-            loadAdminData();
+            // Configurar datos del admin
+            document.getElementById('admin-sede').textContent = `Sede: ${adminInfo.sede}`;
+            document.getElementById('admin-email').textContent = adminInfo.email;
+            document.getElementById('sede-name').textContent = `Sede: ${adminInfo.sede}`;
+            document.getElementById('promo-sede').value = adminInfo.sede;
+            
+            // Configurar logout
+            document.getElementById('logout-btn').addEventListener('click', async (e) => {
+                e.preventDefault();
+                await logoutUser();
+                window.location.href = 'login-admin.html';
+            });
             
         } catch (error) {
-            console.error('Error en verificación de admin:', error);
-            window.location.href = 'login.html?error=Error%20de%20verificación';
+            console.error('Error al cargar panel admin:', error);
+            await logoutUser();
+            window.location.href = 'login-admin.html?error=Error al cargar el panel';
         }
     }
 
-    // Evitar mostrar contenido antes de la verificación
-    document.body.style.display = 'none';
-    
-    // Usar evento load en lugar de DOMContentLoaded para móviles
-    window.addEventListener('load', checkAdminAccess);
-</script>    
+    // Iniciar cuando la página cargue
+    window.addEventListener('load', initAdminPanel);
+</script>     
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="logo">
