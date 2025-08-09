@@ -377,9 +377,9 @@ async function verificarDisponibilidad() {
         if (servicio === 'Permanente') {
             horasBase = ['08:30:00'];
         } else if (hasPermanentBooking) {
-            horasBase = generarHorasDisponiblesDesde(16, 30);
+            horasBase = generarHorasDisponiblesDesde(14, 30);
         } else {
-            horasBase = generarHorasDisponiblesDesde(9, 30);
+            horasBase = generarHorasDisponiblesDesde(8, 30);
         }
 
         const horasDisponibles = horasBase.filter(hora => !horasOcupadas.includes(hora));
