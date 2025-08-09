@@ -375,7 +375,7 @@ async function verificarDisponibilidad() {
         const hasPermanentBooking = isMartin && citasExistentes.some(cita => cita.servicio === 'Permanente');
 
         if (servicio === 'Permanente') {
-            horasBase = ['08:30:00', '09:30:00', '10:30:00'];
+            horasBase = ['08:30:00'];
         } else if (hasPermanentBooking) {
             horasBase = generarHorasDisponiblesDesde(16, 30);
         } else {
