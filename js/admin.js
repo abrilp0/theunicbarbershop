@@ -248,8 +248,15 @@ async function loadCitas() {
     try {
         const hoy = new Date();
         const hoyStr = hoy.toISOString().split('T')[0];
+        
+        let sedeFiltrada = currentSede;
+        
+        // Ajuste para que 'manuel_rodriguez' coincida con 'manuel rodriguez' o 'Manuel Rodríguez'
+        if (currentSede === 'manuel_rodriguez') {
+            sedeFiltrada = 'Manuel Rodríguez'; 
+        }
 
-        console.log("Cargando citas para sede:", currentSede);
+        console.log("Cargando citas para sede:", sedeFiltrada);
         const { data: citas, error } = await supabase
             .from('citas')
             .select(`
@@ -258,7 +265,7 @@ async function loadCitas() {
                 barberos:barbero_id (nombre)
             `)
             .gte('fecha', hoyStr) // Solo citas desde hoy en adelante
-            .eq('sede', currentSede) // Filtrar por sede del admin
+            .eq('sede', sedeFiltrada) // Filtrar por la sede corregida
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true });
 

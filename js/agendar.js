@@ -22,15 +22,16 @@ const mobileMenuToggle = document.getElementById('mobile-menu');
 const navList = document.querySelector('.nav-list');
 const navLinks = document.querySelectorAll('.nav-list a');
 const bookingBtn = form.querySelector('button[type="submit"]');
-const userMenuToggle = document.getElementById('user-menu-toggle'); // Nuevo elemento
+const userMenuToggle = document.getElementById('user-menu-toggle');
 
 let currentUserId = null;
 let isAuthenticated = false;
-let barberosDisponibles = []; // Para almacenar los barberos cargados
+let barberosDisponibles = [];
+let clienteData = null; // Para almacenar los datos del cliente
 
 document.addEventListener('DOMContentLoaded', async function () {
     setupMobileMenu();
-    setupUserMenu(); // Nueva función para el menú de usuario
+    setupUserMenu();
     await setupUserSession();
     setupLogout();
     setupFormEvents();
@@ -44,8 +45,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         dateFormat: "Y-m-d",
         disableMobile: true,
         disable: [
-            function(date) {
-                return date.getDay() === 0 || date.getDay() === 6;
+            function (date) {
+                return date.getDay() === 0; // Deshabilita solo los domingos
             }
         ],
         locale: {
@@ -60,11 +61,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 function setupMobileMenu() {
     if (mobileMenuToggle && navList) {
-        mobileMenuToggle.addEventListener('click', function() {
+        mobileMenuToggle.addEventListener('click', function () {
             this.classList.toggle('active');
             navList.classList.toggle('active');
-            
-            // Cerrar el menú de usuario si está abierto
+
             if (userDropdown.classList.contains('mobile-visible')) {
                 userDropdown.classList.remove('mobile-visible');
             }
@@ -79,9 +79,7 @@ function setupMobileMenu() {
     }
 }
 
-// Nueva función para manejar el menú de usuario
 function setupUserMenu() {
-    // Crear el botón de menú de usuario si no existe
     if (!userMenuToggle && userDropdown) {
         const menuToggle = document.createElement('button');
         menuToggle.id = 'user-menu-toggle';
@@ -91,27 +89,28 @@ function setupUserMenu() {
             <span></span>
             <span></span>
         `;
-        userNameSpan.parentNode.insertBefore(menuToggle, userNameSpan.nextSibling);
-        
-        menuToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            userDropdown.classList.toggle('mobile-visible');
-            
-            // Cerrar el menú principal si está abierto
-            if (navList.classList.contains('active')) {
-                mobileMenuToggle.classList.remove('active');
-                navList.classList.remove('active');
-            }
-        });
+        if (userNameSpan) {
+            userNameSpan.parentNode.insertBefore(menuToggle, userNameSpan.nextSibling);
+
+            menuToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('mobile-visible');
+
+                if (navList.classList.contains('active')) {
+                    mobileMenuToggle.classList.remove('active');
+                    navList.classList.remove('active');
+                }
+            });
+        }
     }
 
-    // Cerrar menús al hacer click fuera
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!userDropdown.contains(e.target) && !userMenuToggle?.contains(e.target)) {
             userDropdown.classList.remove('mobile-visible');
         }
     });
 }
+
 async function setupUserSession() {
     console.log('[SESSION] Iniciando verificación de sesión...');
 
@@ -126,13 +125,10 @@ async function setupUserSession() {
         return;
     }
 
-    // Usuario autenticado
     isAuthenticated = true;
     currentUserId = session.user.id;
 
-    // Mostrar contenedor y ocultar el botón de login
     if (userDropdown && userNameSpan) {
-        // Quitar cualquier ocultamiento previo
         userDropdown.classList.remove('hidden');
         userDropdown.style.display = 'flex';
         userDropdown.style.visibility = 'visible';
@@ -144,7 +140,6 @@ async function setupUserSession() {
         console.log('[UI] Mostrando nombre:', fullName);
     }
 
-    // Lógica de cliente en base de datos
     try {
         let { data: cliente, error: clienteError } = await supabase
             .from('clientes')
@@ -185,6 +180,7 @@ async function setupUserSession() {
             phoneInput.value = cliente.telefono;
             nameInput.disabled = true;
             phoneInput.disabled = true;
+            clienteData = cliente; // Guardar los datos del cliente
         }
 
     } catch (e) {
@@ -192,7 +188,6 @@ async function setupUserSession() {
         mostrarMensaje(`Error al cargar datos de usuario: ${e.message}`, 'error');
     }
 }
-
 
 function setupLogout() {
     if (cerrarSesionBtn) {
@@ -208,23 +203,33 @@ function setupLogout() {
     }
 }
 
-// Asegurar que la sesión se cargue después de que exista el DOM
 document.addEventListener('DOMContentLoaded', () => {
     setupUserSession();
     setupLogout();
 });
+
+// Lógica de fecha corregida
 function getNextValidBookingDate() {
-    let nextDay = new Date();
-    nextDay.setDate(nextDay.getDate() + 1);
+    let today = new Date();
+    let nextDay = new Date(today);
+    nextDay.setDate(today.getDate() + 1);
 
-    const dayOfWeek = nextDay.getDay();
-    if (dayOfWeek === 0) nextDay.setDate(nextDay.getDate() + 1);
-    else if (dayOfWeek === 6) nextDay.setDate(nextDay.getDate() + 2);
-
+    // Si es viernes o sábado, ajusta para el lunes
+    const dayOfWeek = today.getDay();
+    if (dayOfWeek === 5 || dayOfWeek === 6) { // Viernes (5) o Sábado (6)
+        nextDay.setDate(today.getDate() + (8 - dayOfWeek));
+    }
+    // Si hoy es jueves, nextDay es viernes, lo que está bien.
+    // Si hoy es viernes, nextDay es sábado.
+    // Si hoy es sábado, nextDay es domingo. La lógica anterior fallaba aquí.
+    // Con el nuevo ajuste, si es viernes (5), suma 3 días (8-5) para llegar al lunes.
+    // Si es sábado (6), suma 2 días (8-6) para llegar al lunes.
+    // Si es domingo (0), nextDay es lunes, lo que está bien.
+    if (nextDay.getDay() === 0) {
+        nextDay.setDate(nextDay.getDate() + 1);
+    }
     return nextDay.toISOString().split('T')[0];
 }
-
-
 
 /**
  * Configura los eventos del formulario.
@@ -275,28 +280,19 @@ async function handleServiceChange() {
 
     const selectedService = serviceSelect.value;
 
-    // Habilitar por defecto
     locationSelect.disabled = false;
     barberoSelect.disabled = false;
 
-    // Si el servicio es Permanente, forzar sede Brasil
     if (selectedService === 'Permanente') {
         locationSelect.value = 'brasil';
         locationSelect.disabled = true;
 
-        // Forzar que el cambio de value se aplique al DOM antes de continuar
         await new Promise(resolve => setTimeout(resolve, 0));
     }
 
-    // Actualiza barberos en base a la sede y servicio seleccionados
     await updateBarberosSelect();
-
-    // Verifica disponibilidad de horas para el barbero/servicio actual
     await verificarDisponibilidad();
 }
-
-
-
 
 /**
  * Actualiza el select de barberos.
@@ -313,17 +309,14 @@ async function updateBarberosSelect() {
         return;
     }
 
-    // Normaliza el filtro de sede
     let barberosFiltrados = barberosDisponibles.filter(barbero =>
         barbero.sede?.trim().toLowerCase() === sede.trim().toLowerCase()
     );
 
-    // Filtro adicional para "Corte Cumpleaños Gratis"
     if (servicio === 'Corte Cumpleaños Gratis') {
         barberosFiltrados = barberosFiltrados.filter(barbero => barbero.hace_corte_gratis);
     }
 
-    // Generar opciones del select
     let optionsHtml = '<option value="">Selecciona un barbero</option>';
     if (barberosFiltrados.length > 0) {
         barberosFiltrados.forEach(barbero => {
@@ -335,7 +328,6 @@ async function updateBarberosSelect() {
     }
     barberoSelect.innerHTML = optionsHtml;
 
-    // 👉 Lógica especial para el servicio "Permanente"
     if (servicio === 'Permanente') {
         const martin = barberosFiltrados.find(barbero =>
             barbero.nombre?.trim().toLowerCase() === 'martin' &&
@@ -352,8 +344,6 @@ async function updateBarberosSelect() {
         }
     }
 }
-
-
 
 /**
  * Verifica la disponibilidad de horas para una fecha y barbero específicos.
@@ -381,16 +371,14 @@ async function verificarDisponibilidad() {
 
         let horasBase;
         
-        const isMartin = barberosDisponibles.find(b => b.id === barberoId && b.nombre === 'Martin');
+        const isMartin = barberosDisponibles.find(b => b.id === parseInt(barberoId) && b.nombre === 'Martin');
         const hasPermanentBooking = isMartin && citasExistentes.some(cita => cita.servicio === 'Permanente');
 
         if (servicio === 'Permanente') {
             horasBase = ['08:30:00', '09:30:00', '10:30:00'];
         } else if (hasPermanentBooking) {
-            // Horas para otros clientes de Martín si ya tiene una cita de Permanente
             horasBase = generarHorasDisponiblesDesde(16, 30);
         } else {
-            // Horas normales para todos los demás casos
             horasBase = generarHorasDisponiblesDesde(9, 30);
         }
 
@@ -437,13 +425,12 @@ function generarHorasDisponiblesDesde(startHour, startMinute) {
 async function handleBookingSubmit(event) {
     event.preventDefault();
 
-    // Validar que la fecha seleccionada sea el día siguiente hábil
-    const selectedDate = fechaInput.value; // "YYYY-MM-DD" string
-    const fixedBookingDate = getNextValidBookingDate(); // misma función que usas para limitar el input
+    const selectedDate = fechaInput.value;
+    const fixedBookingDate = getNextValidBookingDate();
 
     if (selectedDate !== fixedBookingDate) {
         mostrarMensaje(`Solo puedes agendar para el día: ${fixedBookingDate}`, 'error');
-        return; // detenemos aquí el submit
+        return;
     }
 
     if (!isAuthenticated) {
@@ -454,30 +441,24 @@ async function handleBookingSubmit(event) {
         return;
     }
 
-    // Primero, consultar si el usuario ya tiene una cita activa o futura
     try {
         const { data: existingAppointments, error: fetchError } = await supabase
             .from('citas')
             .select('*')
             .eq('cliente_id', currentUserId)
-            .gte('fecha', new Date().toISOString().split('T')[0]) // citas desde hoy en adelante
+            .gte('fecha', new Date().toISOString().split('T')[0])
             .limit(1);
 
         if (fetchError) throw fetchError;
 
         if (existingAppointments && existingAppointments.length > 0) {
             const existingBarberoId = existingAppointments[0].barbero_id;
-            // Obtener nombre del barbero para mostrar en mensaje
-            const { data: barberoData, error: barberoError } = await supabase
-                .from('barberos')
-                .select('nombre')
-                .eq('id', existingBarberoId)
-                .single();
-            const barberoName = barberoError ? 'el barbero' : barberoData.nombre;
+            const barberoData = barberosDisponibles.find(b => b.id === existingBarberoId);
+            const barberoName = barberoData ? barberoData.nombre : 'el barbero';
 
             mostrarMensaje(`Ya tienes una cita agendada con ${barberoName}. Si deseas agendar otra, primero debes cancelar la cita actual.`, 'error');
             loader.style.display = 'none';
-            return; // detener proceso de agendamiento
+            return;
         }
     } catch (error) {
         console.error('Error verificando citas existentes:', error);
@@ -486,7 +467,6 @@ async function handleBookingSubmit(event) {
         return;
     }
 
-    // Continúa con la actualización del perfil y creación de cita
     try {
         const { error: updateError } = await supabase
             .from('clientes')
@@ -527,48 +507,39 @@ async function handleBookingSubmit(event) {
 
         mostrarMensaje('¡Cita agendada con éxito! Redirigiendo a WhatsApp...', 'success');
 
-        const barberoName = barberoSelect.options[barberoSelect.selectedIndex].text;
-        const sedeName = locationSelect.options[locationSelect.selectedIndex].text;
-        const selectedDate = new Date(fechaInput.value).toLocaleDateString('es-CL', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        const selectedTime = horaSelect.value.substring(0, 5);
+        const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoSelect.value);
+        if (!barberoData) throw new Error("Barbero no encontrado en la lista local.");
 
-        // Traer teléfono del barbero
-        const { data: barberoData, error: barberoError } = await supabase
-            .from('barberos')
-            .select('telefono')
-            .eq('id', barberoSelect.value)
-            .single();
-
-        if (barberoError) throw barberoError;
-
+        const barberoName = barberoData.nombre;
         const barberoPhone = barberoData.telefono;
+        const sedeName = locationSelect.options[locationSelect.selectedIndex].text;
 
-        // Usar el nombre del cliente ingresado para el mensaje
-        const whatsappMessage = `¡Hola, ${barberoName}! Soy ${nameInput.value}. He agendado una cita contigo en la sede ${sedeName} para el día ${selectedDate} a las ${selectedTime}. El servicio es "${serviceSelect.value}". ¡Nos vemos!`;
-        const whatsappUrl = `https://wa.me/+56${barberoPhone}?text=${encodeURIComponent(whatsappMessage)}`;
-        // Crear un formulario oculto para redirigir sin bloqueos (compatible con iOS/Safari)
-        const formRedirect = document.createElement('form');
-        formRedirect.method = 'GET';
-        formRedirect.action = whatsappUrl;
-        formRedirect.style.display = 'none';
-        document.body.appendChild(formRedirect);
-        formRedirect.submit();
+        const dateObj = new Date(fechaInput.value + 'T00:00:00');
+        const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const dayOfWeek = dayNames[dateObj.getDay()];
+        const selectedDateFormatted = dateObj.toLocaleDateString('es-CL', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
 
-// Redirigir inmediatamente (esto evita bloqueo en móviles)
-//window.location.href = whatsappUrl;
+        const selectedTime = horaSelect.value.substring(0, 5);
+        const customerName = nameInput.value;
 
-// Luego limpiar el formulario silenciosamente
-setTimeout(() => {
-    form.reset();
-    loader.style.display = 'none';
-    setupUserSession();
-    updateBarberosSelect();
-}, 3000);
+        // Modificación: El mensaje de WhatsApp debe ir al barbero, no al cliente.
+        // Se usa el número de teléfono del barbero, no el del cliente.
+        const whatsappMessage = `Hola ${barberoName}, tienes una cita para un ${serviceSelect.value} para el ${dayOfWeek} ${selectedDateFormatted} a las ${selectedTime} con ${customerName}.`;
+        const whatsappUrl = `https://wa.me/56${barberoPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+        
+        // Abrir WhatsApp en una nueva ventana para evitar bloqueos
+        window.open(whatsappUrl, '_blank');
 
+        setTimeout(() => {
+            form.reset();
+            loader.style.display = 'none';
+            setupUserSession();
+            updateBarberosSelect();
+        }, 3000);
 
     } catch (error) {
         console.error('Error en el agendamiento:', error);
@@ -576,6 +547,7 @@ setTimeout(() => {
         loader.style.display = 'none';
     }
 }
+
 function mostrarMensaje(msg, tipo = 'info') {
     if (!mensaje) return;
     mensaje.textContent = msg;
