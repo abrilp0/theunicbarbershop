@@ -512,7 +512,6 @@ async function handleBookingSubmit(event) {
 
         const barberoName = barberoData.nombre;
         const barberoPhone = barberoData.telefono;
-        const sedeName = locationSelect.options[locationSelect.selectedIndex].text;
 
         const dateObj = new Date(fechaInput.value + 'T00:00:00');
         const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -526,13 +525,19 @@ async function handleBookingSubmit(event) {
         const selectedTime = horaSelect.value.substring(0, 5);
         const customerName = nameInput.value;
 
-        // Modificación: El mensaje de WhatsApp debe ir al barbero, no al cliente.
-        // Se usa el número de teléfono del barbero, no el del cliente.
         const whatsappMessage = `Hola ${barberoName}, tienes una cita para un ${serviceSelect.value} para el ${dayOfWeek} ${selectedDateFormatted} a las ${selectedTime} con ${customerName}.`;
+
         const whatsappUrl = `https://wa.me/56${barberoPhone}?text=${encodeURIComponent(whatsappMessage)}`;
-        
-        // Abrir WhatsApp en una nueva ventana para evitar bloqueos
-        window.open(whatsappUrl, '_blank');
+
+        // Detectar iOS para evitar bloqueo popup
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+            // Redirigir en iOS para evitar bloqueo
+            window.location.href = whatsappUrl;
+        } else {
+            // Abrir en nueva ventana en desktop y otros navegadores
+            window.open(whatsappUrl, '_blank');
+        }
 
         setTimeout(() => {
             form.reset();
@@ -547,6 +552,7 @@ async function handleBookingSubmit(event) {
         loader.style.display = 'none';
     }
 }
+
 
 function mostrarMensaje(msg, tipo = 'info') {
     if (!mensaje) return;
