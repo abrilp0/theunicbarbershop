@@ -143,18 +143,22 @@ async function checkSession() {
             return;
         }
 
-        currentSede = adminData.sede;
-        adminSede.textContent = `Sede: ${formatSedeName(adminData.sede)}`;
-        sedeName.textContent = `Sede ${formatSedeName(adminData.sede)}`;
+        // 🔹 Normalizar nombre de sede para que coincida con la tabla citas
+        let sedeNormalizada = adminData.sede.replace(/\s+/g, '_').toLowerCase();
+        currentSede = sedeNormalizada;
 
+
+        currentSede = sedeNormalizada;
+
+        adminSede.textContent = `Sede: ${formatSedeName(currentSede)}`;
+        sedeName.textContent = `Sede ${formatSedeName(currentSede)}`;
         document.getElementById('promo-sede').value = currentSede;
-        
+
         // Establecer las fechas por defecto para la exportación: hoy como inicio y un mes después como fin
         const today = new Date();
         exportFechaInicioInput.value = today.toISOString().split('T')[0];
         const oneMonthLater = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
         exportFechaFinInput.value = oneMonthLater.toISOString().split('T')[0];
-
 
         // Mostrar nombre del admin si está disponible
         if (adminData.nombre) {
@@ -167,6 +171,7 @@ async function checkSession() {
         window.location.href = 'login-admin.html';
     }
 }
+
 
 // Formatear nombre de sede
 function formatSedeName(sede) {
@@ -248,8 +253,9 @@ async function loadCitas() {
         const hoy = new Date();
         const hoyStr = hoy.toISOString().split('T')[0];
 
-        console.log("Cargando citas para sede:", currentSede);
+        console.log("📌 Cargando citas para sede:", `"${currentSede}"`);
 
+        // Buscar citas donde sede sea currentSede o "manuel_rodriguez"
         const { data: citas, error } = await supabase
             .from('citas')
             .select(`
@@ -258,13 +264,13 @@ async function loadCitas() {
                 barberos:barbero_id (nombre)
             `)
             .gte('fecha', hoyStr)
-            .eq('sede', currentSede) // ahora que todo está unificado
+            .or(`sede.eq.${currentSede},sede.eq.manuel_rodriguez`)
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true });
 
         if (error) throw error;
 
-        console.log("Citas obtenidas (futuras):", citas);
+        console.log("✅ Citas obtenidas:", citas);
         citasList.innerHTML = '';
 
         if (!citas || citas.length === 0) {
@@ -294,10 +300,11 @@ async function loadCitas() {
             citasList.appendChild(citaItem);
         });
     } catch (error) {
-        console.error("Error en loadCitas:", error);
+        console.error("❌ Error en loadCitas:", error);
         showNotification('Error al cargar citas', 'error');
     }
 }
+
 
 
 // Función: Exportar citas a Excel con filtro de fechas
@@ -897,7 +904,20 @@ function setupRealTimeUpdates() {
         })
         .subscribe();
     
-// Suscripción a cambios en citas
+
+function playNotificationSound() {
+    if (!notificationSound) {
+        console.warn('No se encontró el elemento de sonido notificationSound');
+        return;
+    }
+    notificationSound.pause();
+    notificationSound.currentTime = 0;
+    notificationSound.play().then(() => {
+        console.log('Sonido reproducido correctamente');
+    }).catch(e => {
+        console.error('Error al reproducir el sonido:', e);
+    });
+}
 supabase.channel('new_citas_notification')
     .on('postgres_changes', {
         event: 'INSERT',
@@ -908,16 +928,7 @@ supabase.channel('new_citas_notification')
         console.log('¡Nueva cita INSERTADA detectada!', payload);
 
         if (payload.new && payload.new.sede === currentSede) {
-            if (notificationSound) {
-                notificationSound.play().then(() => {
-                    console.log('Sonido reproducido correctamente');
-                }).catch(e => {
-                    console.error("Error al reproducir el sonido:", e);
-                });
-            } else {
-                console.warn('No se encontró el elemento de sonido notificationSound');
-            }
-
+            playNotificationSound();
             showNotification(`¡Nueva cita agendada para ${payload.new.fecha} a las ${payload.new.hora}!`, 'success');
             loadCitas();
         }

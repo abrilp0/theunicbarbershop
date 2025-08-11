@@ -379,9 +379,9 @@ async function verificarDisponibilidad() {
         } else if (hasPermanentBooking) {
             horasBase = generarHorasDisponiblesDesde(14, 30);
         } else {
-            horasBase = generarHorasDisponiblesDesde(8, 30);
+            horasBase = generarHorasDisponiblesDesde(9, 30);
         }
-
+        
         const horasDisponibles = horasBase.filter(hora => !horasOcupadas.includes(hora));
 
         let optionsHtml = '<option value="">Selecciona una hora</option>';
@@ -485,15 +485,19 @@ async function handleBookingSubmit(event) {
         return;
     }
 
+    // 🔹 Normalizar la sede para que coincida con admin_users
+    const sedeSeleccionada = locationSelect.value.replace(/_/g, ' ').trim().toLowerCase();
+
     const newAppointment = {
         cliente_id: currentUserId,
         barbero_id: barberoSelect.value,
         fecha: fechaInput.value,
         hora: horaSelect.value,
         servicio: serviceSelect.value,
-        sede: locationSelect.value,
+        sede: sedeSeleccionada,
         notas: notesInput.value,
     };
+
 
     loader.style.display = 'block';
     mostrarMensaje('Agendando tu cita...', 'info');
