@@ -221,7 +221,6 @@ function getNextValidBookingDate() {
     }
     // Si hoy es jueves, nextDay es viernes, lo que está bien.
     // Si hoy es viernes, nextDay es sábado.
-    // Si hoy es sábado, nextDay es domingo. La lógica anterior fallaba aquí.
     // Con el nuevo ajuste, si es viernes (5), suma 3 días (8-5) para llegar al lunes.
     // Si es sábado (6), suma 2 días (8-6) para llegar al lunes.
     // Si es domingo (0), nextDay es lunes, lo que está bien.
@@ -439,6 +438,23 @@ async function handleBookingSubmit(event) {
             window.location.href = 'login.html';
         }, 2000);
         return;
+    }
+
+    // 🔹 Validación extra para Julio y Jair en sede Brasil
+    const barberoId = barberoSelect.value;
+    const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
+
+    if (barberoData && barberoData.sede?.toLowerCase() === 'brasil') {
+        const nombreBarbero = barberoData.nombre?.trim().toLowerCase();
+        if (['julio', 'jair'].includes(nombreBarbero)) {
+            const fechaSeleccionada = new Date(selectedDate + 'T00:00:00');
+            const diaSemana = fechaSeleccionada.getDay(); // 0 = domingo, 5 = viernes, 6 = sábado
+
+            if (diaSemana === 5 || diaSemana === 6) {
+                mostrarMensaje(`No puedes agendar a ${barberoData.nombre} para viernes o sábado.`, 'error');
+                return;
+            }
+        }
     }
 
     try {
