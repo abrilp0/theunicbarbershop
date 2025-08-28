@@ -29,6 +29,10 @@ let isAuthenticated = false;
 let barberosDisponibles = [];
 let clienteData = null; // Para almacenar los datos del cliente
 
+// NUEVOS para Flatpickr dinámico según barbero
+let datePicker;           // instancia de flatpickr
+let allowedDateForUI = ""; // fecha válida actual en string
+
 document.addEventListener('DOMContentLoaded', async function () {
     setupMobileMenu();
     setupUserMenu();
@@ -36,12 +40,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupLogout();
     setupFormEvents();
 
-    const fixedBookingDate = getNextValidBookingDate();
-
-    flatpickr("#fecha", {
-        defaultDate: fixedBookingDate,
-        minDate: fixedBookingDate,
-        maxDate: fixedBookingDate,
+    // Inicializa flatpickr pero sin fecha fija
+    datePicker = flatpickr("#fecha", {
         dateFormat: "Y-m-d",
         disableMobile: true,
         disable: [
@@ -56,6 +56,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await loadAllBarberos();
     await updateBarberosSelect();
+
+    // Fija fecha permitida según inicio (ningún barbero)
+    setAllowedDateForBarbero(null);
+
     await verificarDisponibilidad();
 });
 
@@ -182,7 +186,6 @@ async function setupUserSession() {
             phoneInput.disabled = true;
             clienteData = cliente; // Guardar los datos del cliente
         }
-
     } catch (e) {
         console.error('Error al cargar datos del cliente:', e.message);
         mostrarMensaje(`Error al cargar datos de usuario: ${e.message}`, 'error');
@@ -208,27 +211,45 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLogout();
 });
 
-// Lógica de fecha corregida
-function getNextValidBookingDate() {
-    let today = new Date();
-    let nextDay = new Date(today);
-    nextDay.setDate(today.getDate() + 1);
+// ==========
+/* 
+    MODIFICACIÓN CRUCIAL: 
+    Calcula fecha válida según barbero, regla especial para Jair (no puede viernes/sábado, empuja a lunes).
+*/
+function getNextValidDateForBarbero(nombreBarbero) {
+    const today = new Date();
+    let next = new Date(today);
+    next.setDate(today.getDate() + 1);
 
-    // Si es viernes o sábado, ajusta para el lunes
-    const dayOfWeek = today.getDay();
-    if (dayOfWeek === 5 || dayOfWeek === 6) { // Viernes (5) o Sábado (6)
-        nextDay.setDate(today.getDate() + (8 - dayOfWeek));
+    // Regla general: si viernes(5) o sábado(6) hoy, salta a lunes
+    const dowToday = today.getDay();
+    if (dowToday === 5 || dowToday === 6) {
+        next.setDate(today.getDate() + (8 - dowToday));
     }
-    // Si hoy es jueves, nextDay es viernes, lo que está bien.
-    // Si hoy es viernes, nextDay es sábado.
-    // Con el nuevo ajuste, si es viernes (5), suma 3 días (8-5) para llegar al lunes.
-    // Si es sábado (6), suma 2 días (8-6) para llegar al lunes.
-    // Si es domingo (0), nextDay es lunes, lo que está bien.
-    if (nextDay.getDay() === 0) {
-        nextDay.setDate(nextDay.getDate() + 1);
+    // Si “de un día para otro” cae en domingo, salta a lunes
+    if (next.getDay() === 0) {
+        next.setDate(next.getDate() + 1);
     }
-    return nextDay.toISOString().split('T')[0];
+    const name = nombreBarbero?.trim()?.toLowerCase() || "";
+    if (name === "jair") {
+        // Si ese próximo día cae viernes o sábado, también salta a lunes
+        const dowNext = next.getDay();
+        if (dowNext === 5 || dowNext === 6) {
+            next.setDate(next.getDate() + (8 - dowNext));
+        }
+    }
+    return next.toISOString().split('T')[0];
 }
+
+// REFRESH fecha permitida en el flatpickr y en variable global
+function setAllowedDateForBarbero(nombreBarbero) {
+    allowedDateForUI = getNextValidDateForBarbero(nombreBarbero);
+    datePicker.set('minDate', allowedDateForUI);
+    datePicker.set('maxDate', allowedDateForUI);
+    datePicker.setDate(allowedDateForUI, true);
+}
+
+// ==========
 
 /**
  * Configura los eventos del formulario.
@@ -236,11 +257,19 @@ function getNextValidBookingDate() {
 function setupFormEvents() {
     locationSelect.addEventListener('change', async () => {
         await updateBarberosSelect();
+        // ACTUALIZA FECHA según barbero al hacer cambio de sede
+        const barberoId = barberoSelect.value;
+        const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
+        setAllowedDateForBarbero(barberoData?.nombre || null);
         await verificarDisponibilidad();
     });
 
     serviceSelect.addEventListener('change', async () => {
         await handleServiceChange();
+        // ACTUALIZA FECHA según barbero al hacer cambio de servicio
+        const barberoId = barberoSelect.value;
+        const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
+        setAllowedDateForBarbero(barberoData?.nombre || null);
     });
 
     fechaInput.addEventListener('change', async () => {
@@ -248,6 +277,10 @@ function setupFormEvents() {
     });
 
     barberoSelect.addEventListener('change', async () => {
+        // CAMBIO CLAVE: fecha permitida cambia con barbero
+        const barberoId = barberoSelect.value;
+        const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
+        setAllowedDateForBarbero(barberoData?.nombre || null);
         await verificarDisponibilidad();
     });
 
@@ -348,17 +381,6 @@ async function updateBarberosSelect() {
  * Verifica la disponibilidad de horas para una fecha y barbero específicos.
  */
 async function verificarDisponibilidad() {
-    async function verificarDisponibilidad() {
-    console.log('[DEBUG] Barbero ID:', barberoId);
-    console.log('[DEBUG] Fecha:', fecha);
-    
-    const barberoSeleccionado = barberosDisponibles.find(b => b.id === parseInt(barberoId));
-    console.log('[DEBUG] Barbero seleccionado:', barberoSeleccionado);
-    console.log('[DEBUG] Nombre del barbero:', barberoSeleccionado?.nombre);
-    console.log('[DEBUG] Es Martin?', barberoSeleccionado?.nombre?.toLowerCase() === 'martin');
-    
-    // Resto del código...
-}
     const barberoId = barberoSelect.value;
     const fecha = fechaInput.value;
     const servicio = serviceSelect.value;
@@ -380,11 +402,11 @@ async function verificarDisponibilidad() {
         const horasOcupadas = citasExistentes.map(c => c.hora);
 
         let horasBase;
-        
+
         // En verificarDisponibilidad() - línea ~410
         const isMartin = barberosDisponibles.find(b => 
             b.id === parseInt(barberoId) && 
-            b.nombre?.trim().toLowerCase() === 'martin'  // ← Cambiado a minúsculas
+            b.nombre?.trim().toLowerCase() === 'martin'
         );
         const hasPermanentBooking = isMartin && citasExistentes.some(cita => cita.servicio === 'Permanente');
 
@@ -395,7 +417,7 @@ async function verificarDisponibilidad() {
         } else {
             horasBase = generarHorasDisponiblesDesde(9, 30);
         }
-        
+
         const horasDisponibles = horasBase.filter(hora => !horasOcupadas.includes(hora));
 
         let optionsHtml = '<option value="">Selecciona una hora</option>';
@@ -440,11 +462,24 @@ async function handleBookingSubmit(event) {
     event.preventDefault();
 
     const selectedDate = fechaInput.value;
-    const fixedBookingDate = getNextValidBookingDate();
+    const barberoId = barberoSelect.value;
+    const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
 
-    if (selectedDate !== fixedBookingDate) {
-        mostrarMensaje(`Solo puedes agendar para el día: ${fixedBookingDate}`, 'error');
+    // VALIDACIÓN NUEVA según fecha permitida por barbero
+    const mustDate = getNextValidDateForBarbero(barberoData?.nombre || null);
+    if (selectedDate !== mustDate) {
+        mostrarMensaje(`Solo puedes agendar para el día: ${mustDate}`, 'error');
         return;
+    }
+
+    // Validación extra SOLO para Jair viernes/sábado
+    if (barberoData && barberoData.nombre?.trim().toLowerCase() === 'jair') {
+        const fechaSeleccionada = new Date(selectedDate + 'T00:00:00');
+        const diaSemana = fechaSeleccionada.getDay(); // 0 = dom ... 6 = sáb
+        if (diaSemana === 5 || diaSemana === 6) {
+            mostrarMensaje(`No puedes agendar a ${barberoData.nombre} para viernes o sábado.`, 'error');
+            return;
+        }
     }
 
     if (!isAuthenticated) {
@@ -455,15 +490,12 @@ async function handleBookingSubmit(event) {
         return;
     }
 
-    // 🔹 Validación extra para Julio y Jair en sede Brasil
-    const barberoId = barberoSelect.value;
-    const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
-
+    // Validación extra para Julio y Jair en sede Brasil (original)
     if (barberoData && barberoData.sede?.toLowerCase() === 'brasil') {
         const nombreBarbero = barberoData.nombre?.trim().toLowerCase();
         if (['julio', 'jair'].includes(nombreBarbero)) {
             const fechaSeleccionada = new Date(selectedDate + 'T00:00:00');
-            const diaSemana = fechaSeleccionada.getDay(); // 0 = domingo, 5 = viernes, 6 = sábado
+            const diaSemana = fechaSeleccionada.getDay(); // 0 = dom, 5 = vie, 6 = sáb
 
             if (diaSemana === 5 || diaSemana === 6) {
                 mostrarMensaje(`No puedes agendar a ${barberoData.nombre} para viernes o sábado.`, 'error');
@@ -516,8 +548,8 @@ async function handleBookingSubmit(event) {
         return;
     }
 
-    // 🔹 Normalizar la sede para que coincida con admin_users
-    const sedeSeleccionada = locationSelect.value.replace(/_/g, ' ').trim().toLowerCase();
+    // Normalizar la sede para que coincida con admin_users
+    const sedeSeleccionada = locationSelect.value.replace(/\_/g, ' ').trim().toLowerCase();
 
     const newAppointment = {
         cliente_id: currentUserId,
@@ -528,7 +560,6 @@ async function handleBookingSubmit(event) {
         sede: sedeSeleccionada,
         notas: notesInput.value,
     };
-
 
     loader.style.display = 'block';
     mostrarMensaje('Agendando tu cita...', 'info');
@@ -587,7 +618,6 @@ async function handleBookingSubmit(event) {
         loader.style.display = 'none';
     }
 }
-
 
 function mostrarMensaje(msg, tipo = 'info') {
     if (!mensaje) return;
