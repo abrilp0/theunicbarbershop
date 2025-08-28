@@ -221,28 +221,25 @@ function getNextValidDateForBarbero(nombreBarbero) {
     let next = new Date(today);
     next.setDate(today.getDate() + 1);
 
-    // Si “mañana” cae en domingo, salta a lunes (jamás se agenda en domingo)
+    // Nunca dejar seleccionar domingo (0)
     if (next.getDay() === 0) {
         next.setDate(next.getDate() + 1);
     }
-
     const nombre = nombreBarbero?.trim()?.toLowerCase() || "";
-
-    // EXCLUSIVO para Jair: si ‘mañana’ cae viernes o sábado, saltar a lunes
     if (nombre === "jair") {
         // Si “mañana” es viernes o sábado, saltar a lunes
         if (next.getDay() === 5) { // viernes
             next.setDate(next.getDate() + 3); // viernes→lunes
-        } else if (next.getDay() === 6) {     // sábado
+        }
+        else if (next.getDay() === 6) { // sábado
             next.setDate(next.getDate() + 2); // sábado→lunes
         }
-        // (ya nunca puede ser domingo acá, pero igual lo volvemos a saltar)
+        // (Por si acaso, nunca domingo)
         if (next.getDay() === 0) {
             next.setDate(next.getDate() + 1);
         }
     }
-
-    return next.toISOString().split('T')[0];
+    return next.toISOString().split('T');
 }
 
 // REFRESH fecha permitida en el flatpickr y en variable global
