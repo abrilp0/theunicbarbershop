@@ -348,6 +348,17 @@ async function updateBarberosSelect() {
  * Verifica la disponibilidad de horas para una fecha y barbero específicos.
  */
 async function verificarDisponibilidad() {
+    async function verificarDisponibilidad() {
+    console.log('[DEBUG] Barbero ID:', barberoId);
+    console.log('[DEBUG] Fecha:', fecha);
+    
+    const barberoSeleccionado = barberosDisponibles.find(b => b.id === parseInt(barberoId));
+    console.log('[DEBUG] Barbero seleccionado:', barberoSeleccionado);
+    console.log('[DEBUG] Nombre del barbero:', barberoSeleccionado?.nombre);
+    console.log('[DEBUG] Es Martin?', barberoSeleccionado?.nombre?.toLowerCase() === 'martin');
+    
+    // Resto del código...
+}
     const barberoId = barberoSelect.value;
     const fecha = fechaInput.value;
     const servicio = serviceSelect.value;
@@ -370,7 +381,11 @@ async function verificarDisponibilidad() {
 
         let horasBase;
         
-        const isMartin = barberosDisponibles.find(b => b.id === parseInt(barberoId) && b.nombre === 'Martin');
+        // En verificarDisponibilidad() - línea ~410
+        const isMartin = barberosDisponibles.find(b => 
+            b.id === parseInt(barberoId) && 
+            b.nombre?.trim().toLowerCase() === 'martin'  // ← Cambiado a minúsculas
+        );
         const hasPermanentBooking = isMartin && citasExistentes.some(cita => cita.servicio === 'Permanente');
 
         if (servicio === 'Permanente') {
