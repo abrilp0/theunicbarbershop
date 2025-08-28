@@ -221,23 +221,27 @@ function getNextValidDateForBarbero(nombreBarbero) {
     let next = new Date(today);
     next.setDate(today.getDate() + 1);
 
-    // Regla general: si viernes(5) o sábado(6) hoy, salta a lunes
-    const dowToday = today.getDay();
-    if (dowToday === 5 || dowToday === 6) {
-        next.setDate(today.getDate() + (8 - dowToday));
-    }
-    // Si “de un día para otro” cae en domingo, salta a lunes
+    // Si “mañana” cae en domingo, salta a lunes (jamás se agenda en domingo)
     if (next.getDay() === 0) {
         next.setDate(next.getDate() + 1);
     }
-    const name = nombreBarbero?.trim()?.toLowerCase() || "";
-    if (name === "jair") {
-        // Si ese próximo día cae viernes o sábado, también salta a lunes
-        const dowNext = next.getDay();
-        if (dowNext === 5 || dowNext === 6) {
-            next.setDate(next.getDate() + (8 - dowNext));
+
+    const nombre = nombreBarbero?.trim()?.toLowerCase() || "";
+
+    // EXCLUSIVO para Jair: si ‘mañana’ cae viernes o sábado, saltar a lunes
+    if (nombre === "jair") {
+        // Si “mañana” es viernes o sábado, saltar a lunes
+        if (next.getDay() === 5) { // viernes
+            next.setDate(next.getDate() + 3); // viernes→lunes
+        } else if (next.getDay() === 6) {     // sábado
+            next.setDate(next.getDate() + 2); // sábado→lunes
+        }
+        // (ya nunca puede ser domingo acá, pero igual lo volvemos a saltar)
+        if (next.getDay() === 0) {
+            next.setDate(next.getDate() + 1);
         }
     }
+
     return next.toISOString().split('T')[0];
 }
 
