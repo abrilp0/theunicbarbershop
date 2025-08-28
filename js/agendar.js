@@ -431,6 +431,9 @@ async function handleBookingSubmit(event) {
     const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
 
     const mustDate = getNextValidDateForBarbero(barberoData?.nombre || null);
+    console.log("Fecha seleccionada:", selectedDate);
+    console.log("Fecha permitida (mustDate):", mustDate.toISOString().split('T')[0]);
+
     if (selectedDate !== mustDate.toISOString().split('T')[0]) {
         mostrarMensaje(`Solo puedes agendar para el día: ${mustDate.toISOString().split('T')[0]}`, 'error');
         return;
