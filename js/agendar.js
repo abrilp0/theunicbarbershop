@@ -29,11 +29,9 @@ let isAuthenticated = false;
 let barberosDisponibles = [];
 let clienteData = null; // Para almacenar los datos del cliente
 
-// Instancia y fecha permitida para flatpickr
-let datePicker;
-let allowedDateForUI = "";
+let datePicker;   // Instancia global de flatpickr
+let allowedDateForUI = null;  // Fecha permitida como objeto Date
 
-// Evento principal de carga
 document.addEventListener('DOMContentLoaded', async function () {
     setupMobileMenu();
     setupUserMenu();
@@ -41,13 +39,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupLogout();
     setupFormEvents();
 
-    // Inicializa flatpickr sin fecha fija
+    // Inicializa flatpickr SIN minDate ni maxDate ni defaultDate
     datePicker = flatpickr("#fecha", {
         dateFormat: "Y-m-d",
         disableMobile: true,
         disable: [
             function (date) {
-                return date.getDay() === 0; // Deshabilita solo los domingos
+                return date.getDay() === 0; // Deshabilita solo domingos
             }
         ],
         locale: {
@@ -58,23 +56,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadAllBarberos();
     await updateBarberosSelect();
 
-    // Fija fecha permitida inicial
+    // Fija la fecha permitida por barbero inicialmente (ninguno seleccionado)
     setAllowedDateForBarbero(null);
 
     await verificarDisponibilidad();
 });
+
 
 function setupMobileMenu() {
     if (mobileMenuToggle && navList) {
         mobileMenuToggle.addEventListener('click', function () {
             this.classList.toggle('active');
             navList.classList.toggle('active');
-
             if (userDropdown.classList.contains('mobile-visible')) {
                 userDropdown.classList.remove('mobile-visible');
             }
         });
-
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
                 mobileMenuToggle.classList.remove('active');
@@ -83,6 +80,7 @@ function setupMobileMenu() {
         });
     }
 }
+
 
 function setupUserMenu() {
     if (!userMenuToggle && userDropdown) {
@@ -96,11 +94,9 @@ function setupUserMenu() {
         `;
         if (userNameSpan) {
             userNameSpan.parentNode.insertBefore(menuToggle, userNameSpan.nextSibling);
-
             menuToggle.addEventListener('click', function (e) {
                 e.stopPropagation();
                 userDropdown.classList.toggle('mobile-visible');
-
                 if (navList.classList.contains('active')) {
                     mobileMenuToggle.classList.remove('active');
                     navList.classList.remove('active');
@@ -108,7 +104,6 @@ function setupUserMenu() {
             });
         }
     }
-
     document.addEventListener('click', function (e) {
         if (!userDropdown.contains(e.target) && !userMenuToggle?.contains(e.target)) {
             userDropdown.classList.remove('mobile-visible');
@@ -116,9 +111,9 @@ function setupUserMenu() {
     });
 }
 
+
 async function setupUserSession() {
     console.log('[SESSION] Iniciando verificación de sesión...');
-
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     console.log('[SESSION] Resultado:', session, sessionError);
 
@@ -137,9 +132,7 @@ async function setupUserSession() {
         userDropdown.classList.remove('hidden');
         userDropdown.style.display = 'flex';
         userDropdown.style.visibility = 'visible';
-
         if (authLink) authLink.classList.add('hidden');
-
         const fullName = session.user.user_metadata?.full_name || session.user.email;
         userNameSpan.textContent = fullName;
         console.log('[UI] Mostrando nombre:', fullName);
@@ -163,7 +156,6 @@ async function setupUserSession() {
                     telefono: '',
                 });
             if (insertError) throw insertError;
-
             ({ data: cliente } = await supabase
                 .from('clientes')
                 .select('*')
@@ -212,13 +204,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLogout();
 });
 
-// Función corregida para fecha permitida según barbero (Jair bloquea viernes/sábado)
+
+// Función ajustada: calcular fecha válida según barbero, Jair bloquea viernes y sábado
 function getNextValidDateForBarbero(nombreBarbero) {
     const today = new Date();
     let next = new Date(today);
     next.setDate(today.getDate() + 1);
 
-    // No permitir domingos (0)
+    // Nunca domingo
     if (next.getDay() === 0) {
         next.setDate(next.getDate() + 1);
     }
@@ -227,28 +220,27 @@ function getNextValidDateForBarbero(nombreBarbero) {
 
     if (nombre === "jair") {
         if (next.getDay() === 5) { // viernes
-            next.setDate(next.getDate() + 3); // salta a lunes
+            next.setDate(next.getDate() + 3); // saltar a lunes
         } else if (next.getDay() === 6) { // sábado
-            next.setDate(next.getDate() + 2); // salta a lunes
+            next.setDate(next.getDate() + 2); // saltar a lunes
         }
-        // repetir check por si cayó en domingo
         if (next.getDay() === 0) {
             next.setDate(next.getDate() + 1);
         }
     }
 
-    return next.toISOString().split('T')[0];
+    return next;
 }
 
-// Actualiza flatpickr con la fecha permitida y evita error formato
+// Función para actualizar flatpickr según barbero seleccionado
 function setAllowedDateForBarbero(nombreBarbero) {
     allowedDateForUI = getNextValidDateForBarbero(nombreBarbero);
     datePicker.set('minDate', allowedDateForUI);
     datePicker.set('maxDate', allowedDateForUI);
-    datePicker.setDate(new Date(allowedDateForUI + 'T00:00:00'));
+    datePicker.setDate(allowedDateForUI);
 }
 
-// Configura eventos del formulario
+// Configura eventos y lógica del formulario
 function setupFormEvents() {
     locationSelect.addEventListener('change', async () => {
         await updateBarberosSelect();
@@ -439,8 +431,8 @@ async function handleBookingSubmit(event) {
     const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
 
     const mustDate = getNextValidDateForBarbero(barberoData?.nombre || null);
-    if (selectedDate !== mustDate) {
-        mostrarMensaje(`Solo puedes agendar para el día: ${mustDate}`, 'error');
+    if (selectedDate !== mustDate.toISOString().split('T')[0]) {
+        mostrarMensaje(`Solo puedes agendar para el día: ${mustDate.toISOString().split('T')[0]}`, 'error');
         return;
     }
 
@@ -461,13 +453,11 @@ async function handleBookingSubmit(event) {
         return;
     }
 
-    // Validación extra para Julio y Jair en sede Brasil (original)
     if (barberoData && barberoData.sede?.toLowerCase() === 'brasil') {
         const nombreBarbero = barberoData.nombre?.trim().toLowerCase();
         if (['julio', 'jair'].includes(nombreBarbero)) {
             const fechaSeleccionada = new Date(selectedDate + 'T00:00:00');
             const diaSemana = fechaSeleccionada.getDay();
-
             if (diaSemana === 5 || diaSemana === 6) {
                 mostrarMensaje(`No puedes agendar a ${barberoData.nombre} para viernes o sábado.`, 'error');
                 return;
@@ -555,7 +545,7 @@ async function handleBookingSubmit(event) {
         const selectedDateFormatted = dateObj.toLocaleDateString('es-CL', {
             day: 'numeric',
             month: 'long',
-            year: 'numeric'
+            year: 'numeric',
         });
 
         const selectedTime = horaSelect.value.substring(0, 5);
@@ -578,7 +568,6 @@ async function handleBookingSubmit(event) {
             setupUserSession();
             updateBarberosSelect();
         }, 3000);
-
     } catch (error) {
         console.error('Error en el agendamiento:', error);
         mostrarMensaje(`Error al agendar: ${error.message}`, 'error');
