@@ -330,14 +330,31 @@ function generarHorasDisponiblesDesde(startHour, startMinute) {
 
 async function handleBookingSubmit(event) {
     event.preventDefault();
+
     const selectedDate = fechaInput.value;
     const barberoId = barberoSelect.value;
     const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
+
     const mustDate = getNextValidDateForBarbero(barberoData?.nombre || null);
-    if (selectedDate !== mustDate.toISOString().split('T')[0]) {
+
+    // Logs para depurar
+    console.log("Fecha seleccionada:", selectedDate);
+    console.log("Fecha permitida (mustDate):", mustDate.toISOString().split('T')[0]);
+
+    // Normalizamos fechas para comparar solo día (sin hora)
+    function parseDateString(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        d.setHours(0,0,0,0);
+        return d.getTime();
+    }
+    const selectedTime = parseDateString(selectedDate);
+    const mustTime = mustDate.setHours(0,0,0,0);
+    
+    if (selectedTime !== mustTime) {
         mostrarMensaje(`Solo puedes agendar para el día: ${mustDate.toISOString().split('T')[0]}`, 'error');
         return;
     }
+
     if (barberoData && barberoData.nombre?.trim().toLowerCase() === 'jair') {
         const fechaSeleccionada = new Date(selectedDate + 'T00:00:00');
         const diaSemana = fechaSeleccionada.getDay();
