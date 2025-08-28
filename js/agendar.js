@@ -29,10 +29,11 @@ let isAuthenticated = false;
 let barberosDisponibles = [];
 let clienteData = null; // Para almacenar los datos del cliente
 
-// NUEVOS para Flatpickr dinámico según barbero
-let datePicker;           // instancia de flatpickr
-let allowedDateForUI = ""; // fecha válida actual en string
+// Instancia y fecha permitida para flatpickr
+let datePicker;
+let allowedDateForUI = "";
 
+// Evento principal de carga
 document.addEventListener('DOMContentLoaded', async function () {
     setupMobileMenu();
     setupUserMenu();
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupLogout();
     setupFormEvents();
 
-    // Inicializa flatpickr pero sin fecha fija
+    // Inicializa flatpickr sin fecha fija
     datePicker = flatpickr("#fecha", {
         dateFormat: "Y-m-d",
         disableMobile: true,
@@ -57,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadAllBarberos();
     await updateBarberosSelect();
 
-    // Fija fecha permitida según inicio (ningún barbero)
+    // Fija fecha permitida inicial
     setAllowedDateForBarbero(null);
 
     await verificarDisponibilidad();
@@ -211,53 +212,46 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLogout();
 });
 
-// ==========
-/* 
-    MODIFICACIÓN CRUCIAL: 
-    Calcula fecha válida según barbero, regla especial para Jair (no puede viernes/sábado, empuja a lunes).
-*/
+// Función corregida para fecha permitida según barbero (Jair bloquea viernes/sábado)
 function getNextValidDateForBarbero(nombreBarbero) {
     const today = new Date();
     let next = new Date(today);
     next.setDate(today.getDate() + 1);
 
-    // Regla general: si viernes(5) o sábado(6) hoy, salta a lunes
-    const dowToday = today.getDay();
-    if (dowToday === 5 || dowToday === 6) {
-        next.setDate(today.getDate() + (8 - dowToday));
-    }
-    // Si “de un día para otro” cae en domingo, salta a lunes
+    // No permitir domingos (0)
     if (next.getDay() === 0) {
         next.setDate(next.getDate() + 1);
     }
-    const name = nombreBarbero?.trim()?.toLowerCase() || "";
-    if (name === "jair") {
-        // Si ese próximo día cae viernes o sábado, también salta a lunes
-        const dowNext = next.getDay();
-        if (dowNext === 5 || dowNext === 6) {
-            next.setDate(next.getDate() + (8 - dowNext));
+
+    const nombre = nombreBarbero?.trim()?.toLowerCase() || "";
+
+    if (nombre === "jair") {
+        if (next.getDay() === 5) { // viernes
+            next.setDate(next.getDate() + 3); // salta a lunes
+        } else if (next.getDay() === 6) { // sábado
+            next.setDate(next.getDate() + 2); // salta a lunes
+        }
+        // repetir check por si cayó en domingo
+        if (next.getDay() === 0) {
+            next.setDate(next.getDate() + 1);
         }
     }
+
     return next.toISOString().split('T')[0];
 }
 
-// REFRESH fecha permitida en el flatpickr y en variable global
+// Actualiza flatpickr con la fecha permitida y evita error formato
 function setAllowedDateForBarbero(nombreBarbero) {
     allowedDateForUI = getNextValidDateForBarbero(nombreBarbero);
     datePicker.set('minDate', allowedDateForUI);
     datePicker.set('maxDate', allowedDateForUI);
-    datePicker.setDate(allowedDateForUI, true);
+    datePicker.setDate(new Date(allowedDateForUI + 'T00:00:00'));
 }
 
-// ==========
-
-/**
- * Configura los eventos del formulario.
- */
+// Configura eventos del formulario
 function setupFormEvents() {
     locationSelect.addEventListener('change', async () => {
         await updateBarberosSelect();
-        // ACTUALIZA FECHA según barbero al hacer cambio de sede
         const barberoId = barberoSelect.value;
         const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
         setAllowedDateForBarbero(barberoData?.nombre || null);
@@ -266,7 +260,6 @@ function setupFormEvents() {
 
     serviceSelect.addEventListener('change', async () => {
         await handleServiceChange();
-        // ACTUALIZA FECHA según barbero al hacer cambio de servicio
         const barberoId = barberoSelect.value;
         const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
         setAllowedDateForBarbero(barberoData?.nombre || null);
@@ -277,7 +270,6 @@ function setupFormEvents() {
     });
 
     barberoSelect.addEventListener('change', async () => {
-        // CAMBIO CLAVE: fecha permitida cambia con barbero
         const barberoId = barberoSelect.value;
         const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
         setAllowedDateForBarbero(barberoData?.nombre || null);
@@ -287,9 +279,6 @@ function setupFormEvents() {
     form.addEventListener('submit', handleBookingSubmit);
 }
 
-/**
- * Carga todos los barberos desde la base de datos.
- */
 async function loadAllBarberos() {
     try {
         const { data, error } = await supabase
@@ -304,9 +293,6 @@ async function loadAllBarberos() {
     }
 }
 
-/**
- * Maneja los cambios en la selección de servicios especiales.
- */
 async function handleServiceChange() {
     console.log('[DEBUG] Servicio seleccionado:', serviceSelect.value);
 
@@ -326,9 +312,6 @@ async function handleServiceChange() {
     await verificarDisponibilidad();
 }
 
-/**
- * Actualiza el select de barberos.
- */
 async function updateBarberosSelect() {
     const sede = locationSelect.value;
     const servicio = serviceSelect.value;
@@ -377,9 +360,6 @@ async function updateBarberosSelect() {
     }
 }
 
-/**
- * Verifica la disponibilidad de horas para una fecha y barbero específicos.
- */
 async function verificarDisponibilidad() {
     const barberoId = barberoSelect.value;
     const fecha = fechaInput.value;
@@ -403,9 +383,8 @@ async function verificarDisponibilidad() {
 
         let horasBase;
 
-        // En verificarDisponibilidad() - línea ~410
-        const isMartin = barberosDisponibles.find(b => 
-            b.id === parseInt(barberoId) && 
+        const isMartin = barberosDisponibles.find(b =>
+            b.id === parseInt(barberoId) &&
             b.nombre?.trim().toLowerCase() === 'martin'
         );
         const hasPermanentBooking = isMartin && citasExistentes.some(cita => cita.servicio === 'Permanente');
@@ -439,9 +418,6 @@ async function verificarDisponibilidad() {
     }
 }
 
-/**
- * Genera un array de horas disponibles.
- */
 function generarHorasDisponiblesDesde(startHour, startMinute) {
     const horas = [];
     const inicio = startHour * 60 + startMinute;
@@ -455,9 +431,6 @@ function generarHorasDisponiblesDesde(startHour, startMinute) {
     return horas;
 }
 
-/**
- * Maneja el envío del formulario de agendamiento.
- */
 async function handleBookingSubmit(event) {
     event.preventDefault();
 
@@ -465,17 +438,15 @@ async function handleBookingSubmit(event) {
     const barberoId = barberoSelect.value;
     const barberoData = barberosDisponibles.find(b => b.id.toString() === barberoId);
 
-    // VALIDACIÓN NUEVA según fecha permitida por barbero
     const mustDate = getNextValidDateForBarbero(barberoData?.nombre || null);
     if (selectedDate !== mustDate) {
         mostrarMensaje(`Solo puedes agendar para el día: ${mustDate}`, 'error');
         return;
     }
 
-    // Validación extra SOLO para Jair viernes/sábado
     if (barberoData && barberoData.nombre?.trim().toLowerCase() === 'jair') {
         const fechaSeleccionada = new Date(selectedDate + 'T00:00:00');
-        const diaSemana = fechaSeleccionada.getDay(); // 0 = dom ... 6 = sáb
+        const diaSemana = fechaSeleccionada.getDay();
         if (diaSemana === 5 || diaSemana === 6) {
             mostrarMensaje(`No puedes agendar a ${barberoData.nombre} para viernes o sábado.`, 'error');
             return;
@@ -495,7 +466,7 @@ async function handleBookingSubmit(event) {
         const nombreBarbero = barberoData.nombre?.trim().toLowerCase();
         if (['julio', 'jair'].includes(nombreBarbero)) {
             const fechaSeleccionada = new Date(selectedDate + 'T00:00:00');
-            const diaSemana = fechaSeleccionada.getDay(); // 0 = dom, 5 = vie, 6 = sáb
+            const diaSemana = fechaSeleccionada.getDay();
 
             if (diaSemana === 5 || diaSemana === 6) {
                 mostrarMensaje(`No puedes agendar a ${barberoData.nombre} para viernes o sábado.`, 'error');
@@ -548,7 +519,6 @@ async function handleBookingSubmit(event) {
         return;
     }
 
-    // Normalizar la sede para que coincida con admin_users
     const sedeSeleccionada = locationSelect.value.replace(/\_/g, ' ').trim().toLowerCase();
 
     const newAppointment = {
@@ -595,13 +565,10 @@ async function handleBookingSubmit(event) {
 
         const whatsappUrl = `https://wa.me/56${barberoPhone}?text=${encodeURIComponent(whatsappMessage)}`;
 
-        // Detectar iOS para evitar bloqueo popup
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         if (isIOS) {
-            // Redirigir en iOS para evitar bloqueo
             window.location.href = whatsappUrl;
         } else {
-            // Abrir en nueva ventana en desktop y otros navegadores
             window.open(whatsappUrl, '_blank');
         }
 
